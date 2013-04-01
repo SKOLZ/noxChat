@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <errno.h>
 
+int roomNumber;
+int roomPid;
+int clientNumber;
+int *clientPids;
+
 int
 main(int argc, char **argv) {
 	if(argc != 2) {
@@ -8,7 +13,11 @@ main(int argc, char **argv) {
 		exit(1);
 	}
 
-	printf("\nBienvenido a la sala de chat nro. %s\n", argv[0]);
-	printf("====================================\nPID: %s\n", argv[1]);
-	return 0;
+	
+	roomNumber = atoi(argv[0]);
+	roomPid = atoi(argv[1]);
+
+	printf("\nChat room nbr. %d has been created with %d\n",\
+	roomNumber + 1, roomPid);
+	//while(1); Deberia quedarse abierto... HARDCODEADO!!!
 }

@@ -12,11 +12,8 @@ int rooms;
 int
 main(int argc, char **argv) {
 
-	rooms = atoi(argv[1]);
-	selfPid = getpid();
-	pids = malloc(rooms*sizeof(pid_t));
-	system("clear");
-	printf("\nNoxChat server\n==============\nProcess number %d\nRooms:\
+	clearScreen();
+	printf("NoxChat server\n==============\nProcess number %d\nRooms:\
 	 %d\n", selfPid, rooms);
 
 	if(argc != 2) {
@@ -24,23 +21,43 @@ main(int argc, char **argv) {
 		exit(1);
 	}
 
+	rooms = atoi(argv[1]);
+	selfPid = getpid();
+	pids = malloc(rooms*sizeof(pid_t));
+
 	int i;
 	pid_t childpid;
 
 	for(i = 0; i < rooms ; i++) {
-		pids[i] = fork();
-		if(pids[i] == -1) {
+		switch(pids[i] = fork()){
+		case -1: {
 		perror("Failed to Fork");
 		exit(2);
 		}
-		if(pids[i] == 0) {
+		case 0:
 			chatRoom(i, getpid());
+		default:
+			;
 		}
 	}
 	showRooms();
+	saveData();
+	char command[NAME_SIZE+1];
+	while(1) {
+		printf("server$:>");
+		scanf("%s", command);
+		if(!strcmp(command, "/quit")) {
+			shutdown(0);
+		}
+	}
+}
+
+void
+saveData(void) {
 	printf("Saving server data...\n");
 	int fd;
-	if((fd = open("server.cfg", O_RDWR | O_CREAT | O_TRUNC, 0666)) < 0) {
+	if((fd = open("server.cfg", O_RDWR | O_CREAT | O_TRUNC, 0666)) < 0)\
+	{
 		perror("Failed to open server.cfg");
 		shutdown(3);
 	}
@@ -51,13 +68,20 @@ main(int argc, char **argv) {
 		close(fd);
 		shutdown(4);
 	}
-	if((wr = write(fd, pids, rooms*sizeof(pid_t))) < rooms*sizeof(pid_t)) {
+	if((wr = write(fd, pids, rooms*sizeof(pid_t))) < \
+	rooms*sizeof(pid_t)) {
 		perror("Failed to write pids on server.cfg");
 		close(fd);
 		shutdown(5);
 	}
-	while(1);
-	shutdown(0);
+}
+
+void
+clearScreen(void) {
+	int i;
+	for(i = 0; i < 80 ; i++) {
+		printf("\n");
+	}
 }
 
 void
@@ -98,11 +122,11 @@ reverse(char s[]) {
 }
 
 void
-showRooms() {
+showRooms(void) {
 	int i;
 	printf("\nRooms: %d\n", rooms);
 	for(i = 0; i < rooms; i++) {
-		printf("Room name: %d - Room PID: %d\n", i, pids[i]);
+		printf("Room name: %d - Room PID: %d\n", i + 1, pids[i]);
 	}
 }
 
