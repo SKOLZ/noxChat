@@ -14,4 +14,3 @@ char* itoa(int n, char s[]);
 void reverse(char s[]);
 void showRooms(void);
 void shutdown(int status);
-void clearScreen(void);

@@ -13,11 +13,20 @@ int rooms;
 int
 main(int argc, char **argv) {
 
-	clearScreen();
+    static struct sigaction act;
+    void catchint(int);
+    
+    act.sa_handler = catchint;
+    sigemptyset(&(act.sa_mask));
+    
+    sigaddset(&(act.sa_mask), SIGINT);
+    sigaction(SIGINT, &act, NULL);
+    
+	system("clear");
 	if(argc != 2) {
-		perror("Invalid amount of arguments");
-		exit(1);
-	}
+        printf("FATAL: Invalid amount of arguments\n");
+        return 1;
+    }
 	rooms = atoi(argv[1]);
 	selfPid = getpid();
 	if((pids = malloc(rooms*sizeof(pid_t))) == NULL){
@@ -55,6 +64,11 @@ main(int argc, char **argv) {
 	}
 }
 
+void catchint(int signo) {
+    printf("FATAL: Server execution has been terminated suddenly\n");
+    shutdown(0);
+}
+
 void
 saveData(void) {
 	BREAKLINE;
@@ -77,14 +91,6 @@ saveData(void) {
 		perror("Failed to write pids on server.cfg");
 		close(fd);
 		shutdown(5);
-	}
-}
-
-void
-clearScreen(void) {
-	int i;
-	for(i = 0; i < 80 ; i++) {
-		printf("\n");
 	}
 }
 
