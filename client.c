@@ -2,14 +2,16 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
+#include <string.h>
 #include "client.h"
 
 char userName[NAME_SIZE+1];
 char chatMatrix[CHAT_ROWS][CHAT_COLS] = {'\0'};
-int rowPointer = 1;
+int rowPointer = 0;
 
 int
 main(void) {
+	system("clear");
 	int fd;
 	int amount[1];
 	int* pids;
@@ -80,22 +82,23 @@ receiveMessage(char *msg, char *userName) {
 		rowPointer=CHAT_ROWS-1;
 	}
 	int i, j;
-	
-	for(i = 0; i < NAME_SIZE && userName[i] != '\0' ; i++) {
-		chatMatrix[rowPointer][i] = userName[i];
-	}
 
-	chatMatrix[rowPointer][i++] = ':';
-	chatMatrix[rowPointer][i++] = ' ';
+	i = strlen(userName) + strlen(msg) + 2;
 
-	for(j = 0; j < MESSAGE_SIZE && msg[j] != '\0'; j++) {
-		
+	char totalMessage[NAME_SIZE + MESSAGE_SIZE + 3] = {'\0'};
+	strcpy(totalMessage, userName);
+	strcat(totalMessage, ": ");
+	strcat(totalMessage, msg);
+
+	for(j = 0; j < (MESSAGE_SIZE + NAME_SIZE) && totalMessage[j] != \
+	'\0'; j++) {
 		if(((i+1) % (CHAT_COLS)) == 0) {
 			rowPointer++;
 			i = 0;
 		}
-		chatMatrix[rowPointer][i++] = msg[j];
+		chatMatrix[rowPointer][i++] = totalMessage[j];
 	}
+
 	rowPointer++;
 }
 
@@ -109,6 +112,8 @@ clearLastRow(void) {
 
 void
 welcome(int opt, int roomPid, char* userName, int pid) {
+	system("clear");
+	printDivision();
 	int i, j;
 	char msg[MESSAGE_SIZE+1] = {'\0'};
 	for(i = 0; i < CHAT_ROWS ; i++) {
@@ -118,21 +123,33 @@ welcome(int opt, int roomPid, char* userName, int pid) {
 		printf("\n");
 	}
 	i = 0;
-	while(i++ < CHAT_COLS) {
-		printf("-");
-	}
-	printf("\n");
-	printf("\n%s: ", userName);
+	printDivision();
+	printf("%s: ", userName);
 	i = 0;
 	char c;
-	while((c = getchar()) != '\n' && i < MESSAGE_SIZE -1) {
+	int flag = 1;
+	while((c = getchar()) != '\n' && flag) {
 		msg[i++] = c;
+		if (i == MESSAGE_SIZE) {
+			flag = 0;
+		}
+	}
+	if(!flag) {
+		while(getchar() != '\n');
 	}
 	msg[MESSAGE_SIZE] = '\0';
 	sendMessage(msg, userName);
 	welcome(opt, roomPid, userName, pid);
 }
 
+void
+printDivision(void) {
+	int i = 0;
+	while(i++ < CHAT_COLS) {
+		printf("-");
+	}
+	printf("\n");
+}
 void
 sendMessage(char* msg, char* userName) {
 	receiveMessage(msg, userName);//Esto lo haria el server... HARDCODEADO!!!
@@ -147,4 +164,5 @@ scrollDown() {
 		}
 	}
 	clearLastRow();
+	rowPointer = CHAT_ROWS - 1;
 }
