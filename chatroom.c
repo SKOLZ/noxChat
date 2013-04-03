@@ -19,5 +19,5 @@ main(int argc, char **argv) {
 
 	printf("\nChat room nbr. %d has been created with %d\n",\
 	roomNumber + 1, roomPid);
-	//while(1); Deberia quedarse abierto... HARDCODEADO!!!
+	while(1);
 }
