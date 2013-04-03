@@ -45,8 +45,6 @@ main(void) {
 		nOpt = atoi(opt);
 	}while (!isNumber(opt) || nOpt < 1 || nOpt > amount[0]);
 	connect();
-	printf("Welcome to chat room nbr. %d\nPID: %d\n", nOpt\
-	, pids[atoi(opt)-1]);
 	welcome(nOpt, pids[nOpt], userName, getpid());
 	exit(0);
 }
@@ -114,6 +112,8 @@ clearLastRow(void) {
 void
 welcome(int opt, int roomPid, char* userName, int pid) {
 	system("clear");
+    printf("Welcome to chat room nbr. %d\nPID: %d\n", nOpt\
+           , pids[atoi(opt)-1]);
 	printDivision();
 	int i, j;
 	char msg[MESSAGE_SIZE+1] = {'\0'};
