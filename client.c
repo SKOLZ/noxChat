@@ -112,8 +112,7 @@ clearLastRow(void) {
 void
 welcome(int opt, int roomPid, char* userName, int pid) {
 	system("clear");
-    printf("Welcome to chat room nbr. %d\nPID: %d\n", opt\
-           , roomPid);
+    printf("Welcome to chat room nbr. %d - PID: %d\n", opt, roomPid);
 	printDivision();
 	int i, j;
 	char msg[MESSAGE_SIZE+1] = {'\0'};
