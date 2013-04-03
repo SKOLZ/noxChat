@@ -5,6 +5,7 @@
 #include <string.h>
 #include "server.h"
 
+
 pid_t selfPid;
 pid_t *pids;
 int rooms;
@@ -13,18 +14,17 @@ int
 main(int argc, char **argv) {
 
 	clearScreen();
-	printf("NoxChat server\n==============\nProcess number %d\nRooms:\
-	 %d\n", selfPid, rooms);
-
 	if(argc != 2) {
 		perror("Invalid amount of arguments");
 		exit(1);
 	}
-
 	rooms = atoi(argv[1]);
 	selfPid = getpid();
-	pids = malloc(rooms*sizeof(pid_t));
-
+	if((pids = malloc(rooms*sizeof(pid_t))) == NULL){
+		perror("no enough memory");
+	}
+	printf("NoxChat server\n==============\nProcess number %d\nRooms:\
+	 %d\n", selfPid, rooms);
 	int i;
 	pid_t childpid;
 
@@ -35,14 +35,17 @@ main(int argc, char **argv) {
 		exit(2);
 		}
 		case 0:
+			usleep(i*1000);
 			chatRoom(i, getpid());
+			break;
 		default:
-			;
+			break;
 		}
 	}
 	showRooms();
 	saveData();
 	char command[NAME_SIZE+1];
+	usleep(20 *1000);
 	while(1) {
 		printf("server$:>");
 		scanf("%s", command);
@@ -54,6 +57,7 @@ main(int argc, char **argv) {
 
 void
 saveData(void) {
+	BREAKLINE;
 	printf("Saving server data...\n");
 	int fd;
 	if((fd = open("server.cfg", O_RDWR | O_CREAT | O_TRUNC, 0666)) < 0)\
@@ -124,7 +128,7 @@ reverse(char s[]) {
 void
 showRooms(void) {
 	int i;
-	printf("\nRooms: %d\n", rooms);
+	BREAKLINE; 
 	for(i = 0; i < rooms; i++) {
 		printf("Room name: %d - Room PID: %d\n", i + 1, pids[i]);
 	}
@@ -132,7 +136,8 @@ showRooms(void) {
 
 void
 shutdown(int status) {
-	printf("\nFreeing memory...");
+	BREAKLINE;
+	printf("Freeing memory...");
 	free(pids);
 	printf("Done...\n");
 	printf("Erasing server data...");
