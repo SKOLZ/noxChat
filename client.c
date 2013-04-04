@@ -37,49 +37,107 @@ main(void) {
 		}
 	}
 	char opt[MAX_ROOM_DIGITS+1] = {'\0'};
-	int nOpt;
+	int nOpt, i = 0;
+    boolean flag;
+    char c;
 	do {
-		printf("\nRoom number: ");
-		scanf("%s", opt);
-		opt[MAX_ROOM_DIGITS] = '\0';
+        i = 0;
+        printf("\nRoom number: ");
+        flag = TRUE;
+        while((c = getchar()) != '\n' && flag) {
+            opt[i++] = c;
+            if (i == MAX_ROOM_DIGITS) {
+                flag = FALSE;
+            }
+        }
+        if(!flag) {
+            while(getchar() != '\n');
+        }
+        opt[MAX_ROOM_DIGITS] = '\0';
 		nOpt = atoi(opt);
-	}while (!isNumber(opt) || nOpt < 1 || nOpt > amount[0]);
+	}while (!isValidRoomNumber(opt, amount[0]));
 	connect();
 	welcome(nOpt, pids[nOpt], userName, getpid());
 	exit(0);
 }
 
 boolean
+isValidRoomNumber(char *opt, int rooms) {
+    int nOpt = atoi(opt);
+    
+    if (strlen(opt) == 0) {
+        printf("ERROR: please introduce a numeric value\n");
+        resetOption(opt);
+        return FALSE;
+    } else if (!isNumber(opt)) {
+        printf("ERROR: Introduce a valid number\n");
+        resetOption(opt);
+        return FALSE;
+    } else if(nOpt < 1) {
+        printf("ERROR: Invalid option. Option must be greater than zero.\n");
+        resetOption(opt);
+        return FALSE;
+    } else if (nOpt > rooms) {
+        printf("ERROR: Invalid option. Option must be >=1 and <=%d.\n", rooms);
+        resetOption(opt);
+        return FALSE;
+    } else {
+        return TRUE;
+    }
+}
+
+void
+resetOption(char *opt) {
+    int i;
+    for (i = 0; i < MAX_ROOM_DIGITS; i++) {
+        opt[i] = '\0';
+    }
+}
+
+boolean
 isNumber(char *s) {
-	while(s++ != '\0') {
+	while(*s != '\0') {
 		if(!isdigit(*s)) {
 			return FALSE;
 		}
+        s++;
 	}
 	return TRUE;
 }
 
 void
-connect() {
-	do {
-		printf("User name: ");
-		scanf("%s", userName);
-		while(getchar()!='\n');
-		userName[NAME_SIZE] = '\0';
-	} while(!validateUserName(userName));
+connect(void) {
+    int i = 0;
+	char c;
+    boolean flag;
+    do {
+        printf("User name: ");
+        flag = TRUE;
+        while((c = getchar()) != '\n' && flag) {
+            userName[i++] = c;
+            if (i == NAME_SIZE) {
+                flag = FALSE;
+            }
+        }
+        if(!flag) {
+            while(getchar() != '\n');
+        }
+        userName[NAME_SIZE] = '\0';
+    } while (!isValidUserName(userName));
 }
 
 boolean
-validateUserName(char *userName) {
+isValidUserName(char *userName) {
+    if (strlen(userName) == 0) {
+        printf("ERROR: The user name must contain at least one character\n");
+        return FALSE;
+    }
 	return TRUE; //HARDCODEADO!!!
 }
 
 void
 receiveMessage(char *msg, char *userName) {
-	if(rowPointer == CHAT_ROWS) {
-		scrollDown();
-		rowPointer=CHAT_ROWS-1;
-	}
+	checkRowPosition();
 	int i, j;
 
 	i = strlen(userName) + strlen(msg) + 2;
@@ -94,11 +152,20 @@ receiveMessage(char *msg, char *userName) {
 		if(((i+1) % (CHAT_COLS)) == 0) {
 			rowPointer++;
 			i = 0;
+            checkRowPosition();
 		}
 		chatMatrix[rowPointer][i++] = totalMessage[j];
 	}
 
 	rowPointer++;
+}
+
+void
+checkRowPosition(void) {
+    if(rowPointer == CHAT_ROWS) {
+		scrollDown();
+		rowPointer=CHAT_ROWS-1;
+	}
 }
 
 void
@@ -127,11 +194,11 @@ welcome(int opt, int roomPid, char* userName, int pid) {
 	printf("%s: ", userName);
 	i = 0;
 	char c;
-	int flag = 1;
+	boolean flag = TRUE;
 	while((c = getchar()) != '\n' && flag) {
 		msg[i++] = c;
 		if (i == MESSAGE_SIZE) {
-			flag = 0;
+			flag = FALSE;
 		}
 	}
 	if(!flag) {
