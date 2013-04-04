@@ -17,5 +17,4 @@
     void showRooms(void);
     void shutdown(int status);
     void resetOption(char *opt);
-    void askRoomNumber(void);
 #endif

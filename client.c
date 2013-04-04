@@ -36,12 +36,12 @@ main(void) {
 			}
 		}
 	}
-	askRoomNumber();
+	askRoomNumber(amount[0], pids);
 	exit(0);
 }
 
 void
-askRoomNumber(void) {
+askRoomNumber(int rooms, int *pids) {
     char opt[MAX_ROOM_DIGITS+1] = {'\0'};
 	int nOpt, i = 0;
     boolean flag;
@@ -61,7 +61,7 @@ askRoomNumber(void) {
         }
         opt[MAX_ROOM_DIGITS] = '\0';
 		nOpt = atoi(opt);
-	}while (!isValidRoomNumber(opt, amount[0]));
+	}while (!isValidRoomNumber(opt, rooms));
     connect();
 	welcome(nOpt, pids[nOpt], userName, getpid());
 }

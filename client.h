@@ -12,4 +12,5 @@
 	void printDivision(void);
     void checkRowPosition(void);
     boolean isValidRoomNumber(char *opt, int rooms);
+    void askRoomNumber(int rooms, int *pids);
 #endif
