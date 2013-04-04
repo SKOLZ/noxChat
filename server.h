@@ -12,9 +12,10 @@
 
     void saveData(void);
     void chatRoom(int serverNumber, int processID);
-    char* itoa(int n, char s[]);
+    char *itoa(int n, char s[]);
     void reverse(char s[]);
     void showRooms(void);
     void shutdown(int status);
     void resetOption(char *opt);
+    void askRoomNumber(void);
 #endif
