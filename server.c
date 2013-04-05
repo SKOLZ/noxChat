@@ -108,12 +108,30 @@ showRooms(void) {
 
 void
 shutdown(int status) {
+	int i;
+	char roomAux[2];
+	char SchatRoom[32];
+	char RchatRoom[32];
+	
 	BREAKLINE;
 	printf("Freeing memory...");
+	
 	free(pids);
+	
 	printf("Done...\n");
 	printf("Erasing server data...");
+	
 	remove("server.cfg");
+	for(i = 0 ; i<rooms ; i++){
+		strcpy(SchatRoom, "SchatRoom"); 
+		strcpy(RchatRoom, "RchatRoom");
+		strcat(SchatRoom, itoa(i+1, roomAux));
+		strcat(RchatRoom, itoa(i+1, roomAux));
+		
+		remove(RchatRoom);
+		remove(SchatRoom);
+	}
+	
 	printf("Done...\n");
 	printf("Exited with error status: %d\n", status);
 	exit(status);

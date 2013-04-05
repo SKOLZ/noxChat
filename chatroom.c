@@ -8,38 +8,43 @@ char userName[NAME_SIZE+1];
 
 int
 main(int argc, char **argv) {
-	char roomAux[2];
 	if(argc != 2) {
 		perror("Invalid amount of arguments");
 		exit(1);
 	}
-	char SchatRoom[32];
-	char RchatRoom[32];
-	
-	strcpy(SchatRoom, "SchatRoom"); 
-	strcpy(RchatRoom, "RchatRoom");
-	strcat(SchatRoom, itoa(roomNumber, roomAux));
-	strcat(RchatRoom, itoa(roomNumber, roomAux));
-	
 	boolean hasRead = FALSE;
-	char *fifoRead = SchatRoom;
-	char *fifoWrite = RchatRoom;
 	roomNumber = atoi(argv[0]);
 	roomPid = atoi(argv[1]);
 	int fdRead, fdWrite;
 	int aux;
 	
-
+	char roomAux[2];
+	char SchatRoom[32];
+	char RchatRoom[32];
+	
+	strcpy(SchatRoom, "SchatRoom"); 
+	strcpy(RchatRoom, "RchatRoom");
+	
+	strcat(SchatRoom, itoa(roomNumber+1, roomAux));
+	strcat(RchatRoom, itoa(roomNumber+1, roomAux));
+	
+	char *fifoRead = SchatRoom;
+	char *fifoWrite = RchatRoom;
+	
 	printf("\nChat room nbr. %d has been created with %d\n",\
 	roomNumber + 1, roomPid);
 	/*--creating fifos--*/
-	mkfifo(fifoRead, 0666);
-	mkfifo(fifoWrite, 0666);
+	if(mkfifo(fifoRead, 0666) == -1){ 
+		perror("creating fifo read error");
+	}
+	if(mkfifo(fifoWrite, 0666) == -1){
+		perror("creating fifo write error");
+	}
 	/*--begining reading user name--*/
 	if((fdRead = open(fifoRead, O_RDWR) < 0)){
 		perror("fifo open failed");
 	}
-	printf("caca");
+			printf("c a c a");
 	while(!hasRead){
 		if((aux = read(fdRead, userName, NAME_SIZE)) < 0){
 			perror("read failed");

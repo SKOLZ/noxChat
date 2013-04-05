@@ -65,12 +65,13 @@ connect(int room) {
 		scanf("%s", userName);
 		while(getchar()!='\n');
 		userName[NAME_SIZE] = '\0';
-	} while(!validateUserName(userName) || checkUserInServer("pepe"/*userName*/, room));
+	} while(!validateUserName(userName) || checkUserInServer(userName, room));
 	
 }
 
 boolean
 checkUserInServer(char *userName, int room){
+	printf("caca");
 	int fdWrite;
 	int fdRead;
 	char roomNumber[2];
@@ -90,7 +91,6 @@ checkUserInServer(char *userName, int room){
 	
 	int aux;
 	char *result;
-	
 	/*-- begining writing name in fifo --*/
 	if((fdWrite = open(sfifo, O_WRONLY)) < 0){
 		perror("write fifo open failed");
