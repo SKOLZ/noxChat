@@ -71,16 +71,26 @@ connect(int room) {
 
 boolean
 checkUserInServer(char *userName, int room){
-	printf("caca");
 	int fdWrite;
 	int fdRead;
 	char roomNumber[2];
 	boolean hasRead = FALSE;
 	boolean userAvailable;
-	char *sfifo = strcat("SchatRoom", itoa(room, roomNumber));
-	char *rfifo = strcat("Rchatroom", itoa(room, roomNumber));
+	
+	char SchatRoom[32];
+	char RchatRoom[32];
+	
+	strcpy(SchatRoom, "SchatRoom"); 
+	strcpy(RchatRoom, "Rchatroom");
+	strcat(SchatRoom, itoa(room, roomNumber));
+	strcat(RchatRoom, itoa(room, roomNumber));
+	
+	char *sfifo = SchatRoom;
+	char *rfifo = RchatRoom;
+	
 	int aux;
 	char *result;
+	
 	/*-- begining writing name in fifo --*/
 	if((fdWrite = open(sfifo, O_WRONLY)) < 0){
 		perror("write fifo open failed");

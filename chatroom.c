@@ -13,10 +13,17 @@ main(int argc, char **argv) {
 		perror("Invalid amount of arguments");
 		exit(1);
 	}
+	char SchatRoom[32];
+	char RchatRoom[32];
+	
+	strcpy(SchatRoom, "SchatRoom"); 
+	strcpy(RchatRoom, "RchatRoom");
+	strcat(SchatRoom, itoa(roomNumber, roomAux));
+	strcat(RchatRoom, itoa(roomNumber, roomAux));
 	
 	boolean hasRead = FALSE;
-	char *fifoRead = strcat("SchatRoom", itoa(roomNumber, roomAux));
-	char *fifoWrite = strcat("RchatRoom", itoa(roomNumber, roomAux));
+	char *fifoRead = SchatRoom;
+	char *fifoWrite = RchatRoom;
 	roomNumber = atoi(argv[0]);
 	roomPid = atoi(argv[1]);
 	int fdRead, fdWrite;
@@ -32,6 +39,7 @@ main(int argc, char **argv) {
 	if((fdRead = open(fifoRead, O_RDWR) < 0)){
 		perror("fifo open failed");
 	}
+	printf("caca");
 	while(!hasRead){
 		if((aux = read(fdRead, userName, NAME_SIZE)) < 0){
 			perror("read failed");
