@@ -1,6 +1,5 @@
 #ifndef CLIENT_H
 #define CLIENT_H
-	#include "server.h"
 
 	void connect();
 	boolean validateUserName(char *userName);
@@ -10,4 +9,5 @@
 	void scrollDown();
 	void sendMessage(char *msg, char *userName);
 	void printDivision(void);
+	boolean checkUserInServer(char *userName, int room);
 #endif

@@ -2,13 +2,12 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include "client.h"
+#include "server.h"
 
 char userName[NAME_SIZE+1];
 char chatMatrix[CHAT_ROWS][CHAT_COLS] = {'\0'};
 int rowPointer = 0;
+
 
 int
 main(void) {
@@ -44,7 +43,7 @@ main(void) {
 		opt[MAX_ROOM_DIGITS] = '\0';
 		nOpt = atoi(opt);
 	}while (!isNumber(opt) || nOpt < 1 || nOpt > amount[0]);
-	connect();
+	connect(nOpt);
 	welcome(nOpt, pids[nOpt], userName, getpid());
 	exit(0);
 }
@@ -60,14 +59,60 @@ isNumber(char *s) {
 }
 
 void
-connect() {
+connect(int room) {
 	do {
 		printf("User name: ");
 		scanf("%s", userName);
 		while(getchar()!='\n');
 		userName[NAME_SIZE] = '\0';
-	} while(!validateUserName(userName));
+	} while(!validateUserName(userName) || checkUserInServer("pepe"/*userName*/, room));
+	
 }
+
+boolean
+checkUserInServer(char *userName, int room){
+	printf("caca");
+	int fdWrite;
+	int fdRead;
+	char roomNumber[2];
+	boolean hasRead = FALSE;
+	boolean userAvailable;
+	char *sfifo = strcat("SchatRoom", itoa(room, roomNumber));
+	char *rfifo = strcat("Rchatroom", itoa(room, roomNumber));
+	int aux;
+	char *result;
+	/*-- begining writing name in fifo --*/
+	if((fdWrite = open(sfifo, O_WRONLY)) < 0){
+		perror("write fifo open failed");
+	}
+	if((write(fdWrite, userName, NAME_SIZE+1))== -1){
+		perror("write name error");
+	}
+	close(fdWrite);
+	/*ending writing name in fifo--*/
+	/*begining reading user Available from fifo--*/
+	if((fdRead = open(rfifo, O_RDWR)) < 0){
+		perror("read fifo open failed");
+	}
+	while(!hasRead){
+		if((aux = read(fdRead, result, NAME_SIZE)) < 0){
+			perror("read failed");
+		}
+		if(aux > 0){
+			if((strcmp(result, "y")==0)){
+				userAvailable = FALSE;
+			}
+			else{
+				userAvailable = TRUE;
+			}
+			hasRead = TRUE;
+		}
+	}
+	close(fdWrite);
+	/*--ending reading user Availble from fifo--*/
+	return userAvailable;
+}
+	
 
 boolean
 validateUserName(char *userName) {
@@ -166,3 +211,7 @@ scrollDown() {
 	clearLastRow();
 	rowPointer = CHAT_ROWS - 1;
 }
+
+
+
+
