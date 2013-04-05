@@ -50,10 +50,11 @@ main(void) {
 
 boolean
 isNumber(char *s) {
-	while(s++ != '\0') {
+	while(*s != '\0') {
 		if(!isdigit(*s)) {
 			return FALSE;
 		}
+		s++;
 	}
 	return TRUE;
 }
@@ -82,7 +83,7 @@ checkUserInServer(char *userName, int room){
 	char RchatRoom[32];
 	
 	strcpy(SchatRoom, "SchatRoom"); 
-	strcpy(RchatRoom, "Rchatroom");
+	strcpy(RchatRoom, "RchatRoom");
 	strcat(SchatRoom, itoa(room, roomNumber));
 	strcat(RchatRoom, itoa(room, roomNumber));
 	
@@ -90,7 +91,11 @@ checkUserInServer(char *userName, int room){
 	char *rfifo = RchatRoom;
 	
 	int aux;
-	char *result;
+	char result[NAME_SIZE+1];
+	/*-- open read before --*/
+	if((fdRead = open(rfifo, O_RDWR)) < 0){
+		perror("read fifo open failed");
+	}
 	/*-- begining writing name in fifo --*/
 	if((fdWrite = open(sfifo, O_WRONLY)) < 0){
 		perror("write fifo open failed");
@@ -101,11 +106,11 @@ checkUserInServer(char *userName, int room){
 	close(fdWrite);
 	/*ending writing name in fifo--*/
 	/*begining reading user Available from fifo--*/
-	if((fdRead = open(rfifo, O_RDWR)) < 0){
-		perror("read fifo open failed");
-	}
+	printf("%d", fdRead);
+	//exit(0);
 	while(!hasRead){
 		if((aux = read(fdRead, result, NAME_SIZE)) < 0){
+			printf("%d", fdRead);
 			perror("read failed");
 		}
 		if(aux > 0){

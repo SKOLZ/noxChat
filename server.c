@@ -36,8 +36,8 @@ main(int argc, char **argv) {
 	for(i = 0; i < rooms ; i++) {
 		switch(pids[i] = fork()){
 		case -1: {
-		perror("Failed to Fork");
-		exit(2);
+			perror("Failed to Fork");
+			exit(2);
 		}
 		case 0:
 			usleep(i*1000);

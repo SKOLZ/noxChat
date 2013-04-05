@@ -1,7 +1,7 @@
 typedef int boolean;
 
 #define TRUE 1;
-#define FALSE -1;
+#define FALSE 0;
 #define MESSAGE_SIZE 140
 #define NAME_SIZE 32
 #define CHAT_ROWS 20

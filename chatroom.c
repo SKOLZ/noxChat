@@ -41,16 +41,15 @@ main(int argc, char **argv) {
 		perror("creating fifo write error");
 	}
 	/*--begining reading user name--*/
-	if((fdRead = open(fifoRead, O_RDWR) < 0)){
+	if((fdRead = open(fifoRead, O_RDWR)) < 0){
 		perror("fifo open failed");
 	}
-			printf("c a c a");
 	while(!hasRead){
 		if((aux = read(fdRead, userName, NAME_SIZE)) < 0){
 			perror("read failed");
 		}
 		if(aux > 0){
-			printf("user name: %s\n", userName);//para ver si el chatroom leyo bien el nombre, sacar luego
+			printf(" a new user has joined the room,  name: %s\n", userName);//para ver si el chatroom leyo bien el nombre, sacar luego
 			hasRead = TRUE;
 			/*--ending reading user name--*/
 			/*--begining writing user Available--*/
@@ -58,18 +57,38 @@ main(int argc, char **argv) {
 				perror("opening name Available in fifo failed");
 			}
 			if(uniqueUser(userName)){
+				close(fdRead);
+				//addToUserList(userName);
 				if(write(fdWrite, "y", 2) == -1){
 					perror("writing name Available failed");
 				}
+				/*-- creatin dedicated server for user--*/
+				switch(fork()){
+					case -1: {
+						perror("failed to fork");
+						exit(2);
+						break;
+					}
+					case 0: {
+						//listenToUser();
+						break;
+					}
+					default{
+						break;
+					}
+				}	
 			}
 			else{
 				if(write(fdWrite, "n", 2) == -1){
 					perror("writing name Availabl failed");
 				}
 			}
+			close(fdWrite);
 			/*ending writing user available--*/
+
 		}
 	}
+	//wait for other user to do the exact same thing
 }
 
 boolean
