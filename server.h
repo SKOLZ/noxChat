@@ -1,7 +1,7 @@
 typedef int boolean;
 
-#define TRUE 1;
-#define FALSE 0;
+#define TRUE 1
+#define FALSE 0
 #define MESSAGE_SIZE 140
 #define NAME_SIZE 32
 #define CHAT_ROWS 20
@@ -23,4 +23,5 @@ void saveData(void);
 void chatRoom(int serverNumber, int processID);
 void showRooms(void);
 void shutdown(int status);
+void welcomeUsers( char *fifoRead, char *fifoWrite);
 

@@ -35,16 +35,8 @@ main(void) {
 			}
 		}
 	}
-	char opt[MAX_ROOM_DIGITS+1] = {'\0'};
-	int nOpt;
-	do {
-		printf("\nRoom number: ");
-		scanf("%s", opt);
-		opt[MAX_ROOM_DIGITS] = '\0';
-		nOpt = atoi(opt);
-	}while (!isNumber(opt) || nOpt < 1 || nOpt > amount[0]);
-	connect(nOpt);
-	welcome(nOpt, pids[nOpt], userName, getpid());
+	
+	askRoomNumber(amount[0], pids);
 	exit(0);
 }
 
@@ -61,18 +53,87 @@ isNumber(char *s) {
 
 void
 connect(int room) {
+	    int i = 0;
+	char c;
+    boolean flag;
+    do {
+        printf("User name: ");
+        flag = TRUE;
+        while((c = getchar()) != '\n' && flag) {
+            userName[i++] = c;
+            if (i == NAME_SIZE) {
+                flag = FALSE;
+            }
+        }
+        if(!flag) {
+            while(getchar() != '\n');
+        }
+        userName[NAME_SIZE] = '\0';
+    } while (!isValidUserName(userName) || checkUserInServer(userName, room));
+}
+
+void
+resetOption(char *opt) {
+    int i;
+    for (i = 0; i < MAX_ROOM_DIGITS; i++) {
+        opt[i] = '\0';
+    }
+}
+
+boolean
+isValidRoomNumber(char *opt, int rooms) {
+    int nOpt = atoi(opt);
+    
+
+    if (strlen(opt) == 0) {
+        printf("ERROR: please introduce a numeric value\n");
+        resetOption(opt);
+        return FALSE;
+    } else if (!isNumber(opt)) {
+        printf("ERROR: Introduce a valid number\n");
+        resetOption(opt);
+        return FALSE;
+    } else if(nOpt < 1) {
+        printf("ERROR: Invalid option. Option must be greater than zero.\n");
+        resetOption(opt);
+        return FALSE;
+    } else if (nOpt > rooms) {
+        printf("ERROR: Invalid option. Option must be >=1 and <=%d.\n", rooms);
+        resetOption(opt);
+        return FALSE;
+    } else {
+        return TRUE;
+    }
+}
+
+void
+askRoomNumber(int rooms, int *pids) {
+    char opt[MAX_ROOM_DIGITS+1] = {'\0'};
+	int nOpt, i = 0;
+    boolean flag;
+    char c;
 	do {
-		printf("User name: ");
-		scanf("%s", userName);
-		while(getchar()!='\n');
-		userName[NAME_SIZE] = '\0';
-	} while(!validateUserName(userName) || checkUserInServer(userName, room));
-	
+        i = 0;
+        printf("\nRoom number: ");
+        flag = TRUE;
+        while((c = getchar()) != '\n' && flag) {
+            opt[i++] = c;
+            if (i == MAX_ROOM_DIGITS) {
+                flag = FALSE;
+            }
+        }
+        if(!flag) {
+            while(getchar() != '\n');
+        }
+        opt[MAX_ROOM_DIGITS] = '\0';
+		nOpt = atoi(opt);
+	}while (!isValidRoomNumber(opt, rooms));
+    connect(nOpt);
+	welcome(nOpt, pids[nOpt], userName, getpid());
 }
 
 boolean
 checkUserInServer(char *userName, int room){
-	printf("caca");
 	int fdWrite;
 	int fdRead;
 	char roomNumber[2];
@@ -106,8 +167,6 @@ checkUserInServer(char *userName, int room){
 	close(fdWrite);
 	/*ending writing name in fifo--*/
 	/*begining reading user Available from fifo--*/
-	printf("%d", fdRead);
-	//exit(0);
 	while(!hasRead){
 		if((aux = read(fdRead, result, NAME_SIZE)) < 0){
 			printf("%d", fdRead);
@@ -128,37 +187,34 @@ checkUserInServer(char *userName, int room){
 	return userAvailable;
 }
 	
-
 boolean
-validateUserName(char *userName) {
+isValidUserName(char *userName) {
+    if (strlen(userName) == 0) {
+        printf("ERROR: The user name must contain at least one character\n");
+        return FALSE;
+    }
 	return TRUE; //HARDCODEADO!!!
 }
 
 void
 receiveMessage(char *msg, char *userName) {
-	if(rowPointer == CHAT_ROWS) {
-		scrollDown();
-		rowPointer=CHAT_ROWS-1;
-	}
-	int i, j;
-
-	i = strlen(userName) + strlen(msg) + 2;
+    checkRowPosition();
+    int i = 0, j = 0;
 
 	char totalMessage[NAME_SIZE + MESSAGE_SIZE + 3] = {'\0'};
 	strcpy(totalMessage, userName);
 	strcat(totalMessage, ": ");
 	strcat(totalMessage, msg);
 
-	for(j = 0; j < (MESSAGE_SIZE + NAME_SIZE) && totalMessage[j] != \
-	'\0'; j++) {
-		if(((i+1) % (CHAT_COLS)) == 0) {
-			rowPointer++;
-			i = 0;
+	while(j < (MESSAGE_SIZE + NAME_SIZE + 2) && totalMessage[j] != '\0') {
+        printf("i = %d\n", i);
+        if(((i+1) % (CHAT_COLS)) == 0) {
+            printf("ENTRE\n");
+            checkRowPosition();
+            i = tabulateChat();
 		}
-		chatMatrix[rowPointer][i++] = totalMessage[j];
+        chatMatrix[rowPointer][i++] = totalMessage[j++];
 	}
-
-	rowPointer++;
 }
 
 void
@@ -171,35 +227,35 @@ clearLastRow(void) {
 
 void
 welcome(int opt, int roomPid, char* userName, int pid) {
-	system("clear");
-    printf("Welcome to chat room nbr. %d - PID: %d\n", opt, roomPid);
-	printDivision();
-	int i, j;
-	char msg[MESSAGE_SIZE+1] = {'\0'};
-	for(i = 0; i < CHAT_ROWS ; i++) {
-		for(j = 0; j < CHAT_COLS ; j++) {
-			printf("%c", chatMatrix[i][j]);
-		}
-		printf("\n");
-	}
-	i = 0;
-	printDivision();
-	printf("%s: ", userName);
-	i = 0;
-	char c;
-	int flag = 1;
-	while((c = getchar()) != '\n' && flag) {
-		msg[i++] = c;
-		if (i == MESSAGE_SIZE) {
-			flag = 0;
-		}
-	}
-	if(!flag) {
-		while(getchar() != '\n');
-	}
-	msg[MESSAGE_SIZE] = '\0';
-	sendMessage(msg, userName);
-	welcome(opt, roomPid, userName, pid);
+    while(TRUE) {
+        system("clear");
+        printf("Welcome to chat room nbr. %d - PID: %d\n", opt, roomPid);
+        printDivision();
+        int i, j;
+        char msg[MESSAGE_SIZE+1] = {'\0'};
+        for(i = 0; i < CHAT_ROWS ; i++) {
+            for(j = 0; j < CHAT_COLS ; j++) {
+                printf("%c", chatMatrix[i][j]);
+            }
+            printf("\n");
+        }
+        i = 0;
+        printDivision();
+        printf("%s: ", userName);
+        char c;
+        boolean flag = TRUE;
+        while((c = getchar()) != '\n' && flag) {
+            msg[i++] = c;
+            if (i == MESSAGE_SIZE) {
+                flag = FALSE;
+            }
+        }
+        if(!flag) {
+            while(getchar() != '\n');
+        }
+        msg[MESSAGE_SIZE] = '\0';
+        sendMessage(msg, userName);
+    }
 }
 
 void
@@ -224,9 +280,25 @@ scrollDown() {
 		}
 	}
 	clearLastRow();
-	rowPointer = CHAT_ROWS - 1;
 }
 
+int
+tabulateChat(void) {
+    int i;
+    int lenght = strlen(userName) + 2;
+    for (i = 0; i < lenght; i++) {
+        chatMatrix[rowPointer][i] = ' ';
+    }
+    return lenght;
+}
 
+int
+checkRowPosition(void) {
+    if(rowPointer == CHAT_ROWS-1) {
+		scrollDown();
+	} else {
+        rowPointer++;
+    }
+}
 
 

@@ -12,10 +12,9 @@ main(int argc, char **argv) {
 		perror("Invalid amount of arguments");
 		exit(1);
 	}
-	boolean hasRead = FALSE;
 	roomNumber = atoi(argv[0]);
 	roomPid = atoi(argv[1]);
-	int fdRead, fdWrite;
+
 	int aux;
 	
 	char roomAux[2];
@@ -40,6 +39,21 @@ main(int argc, char **argv) {
 	if(mkfifo(fifoWrite, 0666) == -1){
 		perror("creating fifo write error");
 	}
+	
+	while(TRUE){
+		welcomeUsers(fifoRead, fifoWrite);
+	}
+}		
+		
+void
+welcomeUsers( char *fifoRead, char *fifoWrite){
+	int fdRead;
+	int fdWrite;
+	int aux;
+	boolean hasRead = FALSE;
+		
+		
+		
 	/*--begining reading user name--*/
 	if((fdRead = open(fifoRead, O_RDWR)) < 0){
 		perror("fifo open failed");
@@ -49,7 +63,7 @@ main(int argc, char **argv) {
 			perror("read failed");
 		}
 		if(aux > 0){
-			printf(" a new user has joined the room,  name: %s\n", userName);//para ver si el chatroom leyo bien el nombre, sacar luego
+			printf("A new user has joined room number %d: %s \n server$:>",roomNumber+1, userName);
 			hasRead = TRUE;
 			/*--ending reading user name--*/
 			/*--begining writing user Available--*/
@@ -73,7 +87,7 @@ main(int argc, char **argv) {
 						//listenToUser();
 						break;
 					}
-					default{
+					default: {
 						break;
 					}
 				}	
@@ -88,7 +102,6 @@ main(int argc, char **argv) {
 
 		}
 	}
-	//wait for other user to do the exact same thing
 }
 
 boolean

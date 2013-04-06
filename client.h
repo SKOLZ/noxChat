@@ -10,4 +10,5 @@
 	void sendMessage(char *msg, char *userName);
 	void printDivision(void);
 	boolean checkUserInServer(char *userName, int room);
+	void askRoomNumber(int rooms, int *pids);
 #endif
