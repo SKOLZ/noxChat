@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include "server.h"
+#include "client.h"
 
 char userName[NAME_SIZE+1];
 char chatMatrix[CHAT_ROWS][CHAT_COLS] = {'\0'};
@@ -14,16 +15,16 @@ main(void) {
 	system("clear");
 	int fd;
 	int amount[1];
-	int* pids;
+	pid_t* pids;
 	if((fd = open("server.cfg", O_RDONLY)) < 0) {
 		printf("Server is offline. Try connecting again later...\n");
 		exit(1);
 	} else {
 		int rd;
 		read(fd, amount, (size_t)sizeof(int));
-		pids = malloc(amount[0]*sizeof(int));
-		if((rd = read(fd, pids, (size_t)amount[0]*sizeof(int))) < \
-		(size_t)amount[0]*sizeof(int)) {
+		pids = malloc(amount[0]*sizeof(pid_t));
+		if((rd = read(fd, pids, (size_t)amount[0]*sizeof(pid_t))) < \
+		(size_t)amount[0]*sizeof(pid_t)) {
 			perror("Failed to read pids on server.cfg");
 			close(fd);
 			exit(3);
@@ -69,7 +70,7 @@ connect(int room) {
             while(getchar() != '\n');
         }
         userName[NAME_SIZE] = '\0';
-    } while (!isValidUserName(userName) || checkUserInServer(userName, room));
+    } while (!isValidUserName(userName, room) || checkUserInServer(userName, room, getpid()));
 }
 
 void
@@ -133,16 +134,17 @@ askRoomNumber(int rooms, int *pids) {
 }
 
 boolean
-checkUserInServer(char *userName, int room){
+checkUserInServer(char *userName, int room, pid_t pid) {
 	int fdWrite;
 	int fdRead;
-	char roomNumber[2];
+	char roomNumber[MAX_ROOM_DIGITS];
 	boolean hasRead = FALSE;
 	boolean userAvailable;
 	
-	char SchatRoom[32];
-	char RchatRoom[32];
-	
+	char SchatRoom[NAME_SIZE];
+	char RchatRoom[NAME_SIZE];
+	char aPid[MAX_PID_DIGITS];
+    
 	strcpy(SchatRoom, "SchatRoom"); 
 	strcpy(RchatRoom, "RchatRoom");
 	strcat(SchatRoom, itoa(room, roomNumber));
@@ -161,7 +163,10 @@ checkUserInServer(char *userName, int room){
 	if((fdWrite = open(sfifo, O_WRONLY)) < 0){
 		perror("write fifo open failed");
 	}
-	if((write(fdWrite, userName, NAME_SIZE+1))== -1){
+	if((write(fdWrite, userName, NAME_SIZE+1)) < 0){
+		perror("write name error");
+	}
+    if((write(fdWrite, itoa(pid, aPid), sizeof(pid_t)))== -1){
 		perror("write name error");
 	}
 	close(fdWrite);
@@ -188,7 +193,7 @@ checkUserInServer(char *userName, int room){
 }
 	
 boolean
-isValidUserName(char *userName) {
+isValidUserName(char *userName, int room) {
     if (strlen(userName) == 0) {
         printf("ERROR: The user name must contain at least one character\n");
         return FALSE;
@@ -226,7 +231,7 @@ clearLastRow(void) {
 }
 
 void
-welcome(int opt, int roomPid, char* userName, int pid) {
+welcome(int opt, pid_t roomPid, char* userName, pid_t pid) {
     while(TRUE) {
         system("clear");
         printf("Welcome to chat room nbr. %d - PID: %d\n", opt, roomPid);
@@ -300,5 +305,3 @@ checkRowPosition(void) {
         rowPointer++;
     }
 }
-
-

@@ -4,7 +4,7 @@ int roomNumber;
 int roomPid;
 int clientNumber;
 int *clientPids;
-char userName[NAME_SIZE+1];
+usrData users;
 
 int
 main(int argc, char **argv) {
@@ -17,9 +17,9 @@ main(int argc, char **argv) {
 
 	int aux;
 	
-	char roomAux[2];
-	char SchatRoom[32];
-	char RchatRoom[32];
+	char roomAux[MAX_ROOM_DIGITS];
+	char SchatRoom[NAME_SIZE];
+	char RchatRoom[NAME_SIZE];
 	
 	strcpy(SchatRoom, "SchatRoom"); 
 	strcpy(RchatRoom, "RchatRoom");
@@ -35,9 +35,11 @@ main(int argc, char **argv) {
 	/*--creating fifos--*/
 	if(mkfifo(fifoRead, 0666) == -1){ 
 		perror("creating fifo read error");
+        exit(0);//NUEVOOOOOOOOOOOOOOOOOOOOOOOOOOO
 	}
 	if(mkfifo(fifoWrite, 0666) == -1){
 		perror("creating fifo write error");
+        exit(0);//NUEVOOOOOOOOOOOOOOOOOOOOOOOOOOO
 	}
 	
 	while(TRUE){
@@ -46,24 +48,29 @@ main(int argc, char **argv) {
 }		
 		
 void
-welcomeUsers( char *fifoRead, char *fifoWrite){
-	int fdRead;
-	int fdWrite;
-	int aux;
+welcomeUsers(char *fifoRead, char *fifoWrite){
+	int fdRead, fdWrite, aux1, aux2;
 	boolean hasRead = FALSE;
-		
-		
-		
+    char userName[NAME_SIZE+1] = {'\0'};
+    char *pid = malloc(sizeof(pid_t));
+
 	/*--begining reading user name--*/
 	if((fdRead = open(fifoRead, O_RDWR)) < 0){
 		perror("fifo open failed");
+        exit(0);
 	}
-	while(!hasRead){
-		if((aux = read(fdRead, userName, NAME_SIZE)) < 0){
-			perror("read failed");
+	while(!hasRead) {
+		if((aux1 = read(fdRead, userName, NAME_SIZE+1)) < 0){
+			perror("Failed to read user name.");
+            exit(0);
 		}
-		if(aux > 0){
-			printf("A new user has joined room number %d: %s \n server$:>",roomNumber+1, userName);
+        if((aux2 = read(fdRead, pid, sizeof(pid_t))) < 0){
+			perror("Failed to read pid.");
+            exit(0);
+		}
+		if(aux1 > 0 && aux2 > 0) {
+			printf("User \"%s\" has joined room number %d - User PID = %s\nserver$:>", userName, roomNumber+1, pid);
+            
 			hasRead = TRUE;
 			/*--ending reading user name--*/
 			/*--begining writing user Available--*/
@@ -72,7 +79,7 @@ welcomeUsers( char *fifoRead, char *fifoWrite){
 			}
 			if(uniqueUser(userName)){
 				close(fdRead);
-				//addToUserList(userName);
+				addToUserList(userName, atoi(pid));
 				if(write(fdWrite, "y", 2) == -1){
 					perror("writing name Available failed");
 				}
@@ -84,7 +91,7 @@ welcomeUsers( char *fifoRead, char *fifoWrite){
 						break;
 					}
 					case 0: {
-						//listenToUser();
+						listenToUser();
 						break;
 					}
 					default: {
@@ -102,6 +109,28 @@ welcomeUsers( char *fifoRead, char *fifoWrite){
 
 		}
 	}
+}
+
+void
+addToUserList(char *userName, pid_t pid) {
+    /*if (users == NULL) {
+        users = (usrData *)malloc(sizeof(usrData));
+        users.usrName = userName;
+        users.pid = pid;
+    } else {
+        usrData curr = users;
+        while (curr.next != NULL) {
+            curr = curr.next;
+        }
+        curr.next = (usrData *)malloc(sizeof(usrData));
+        curr.next.usrName = userName;
+        curr.next.pid = pid;
+    }*/
+}
+
+void
+listenToUser(void) {
+    exit(0);
 }
 
 boolean

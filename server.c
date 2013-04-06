@@ -1,7 +1,6 @@
 #include "server.h"
 
 
-
 pid_t selfPid;
 pid_t *pids;
 int rooms;
@@ -54,10 +53,15 @@ main(int argc, char **argv) {
 	while(1) {
 		printf("server$:>");
 		scanf("%s", command);
-		if(!strcmp(command, "/quit")) {
-			shutdown(0);
-		}
+        checkCommand(command);
 	}
+}
+
+void
+checkCommand(char *command) {
+    if(!strcmp(command, "/quit")) {
+        shutdown(0);
+    }
 }
 
 void catchint(int signo) {
@@ -109,9 +113,9 @@ showRooms(void) {
 void
 shutdown(int status) {
 	int i;
-	char roomAux[2];
-	char SchatRoom[32];
-	char RchatRoom[32];
+	char roomAux[MAX_ROOM_DIGITS];
+	char SchatRoom[NAME_SIZE];
+	char RchatRoom[NAME_SIZE];
 	
 	BREAKLINE;
 	printf("Freeing memory...");
