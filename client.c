@@ -24,7 +24,7 @@ main(void) {
 		read(fd, amount, (size_t)sizeof(int));
 		pids = malloc(amount[0]*sizeof(pid_t));
 		if((rd = read(fd, pids, (size_t)amount[0]*sizeof(pid_t))) < \
-		(size_t)amount[0]*sizeof(pid_t)) {
+           (size_t)amount[0]*sizeof(pid_t)) {
 			perror("Failed to read pids on server.cfg");
 			close(fd);
 			exit(3);
@@ -54,7 +54,7 @@ isNumber(char *s) {
 
 void
 connect(int room) {
-	    int i = 0;
+    int i = 0;
 	char c;
     boolean flag;
     do {
@@ -85,7 +85,7 @@ boolean
 isValidRoomNumber(char *opt, int rooms) {
     int nOpt = atoi(opt);
     
-
+    
     if (strlen(opt) == 0) {
         printf("ERROR: please introduce a numeric value\n");
         resetOption(opt);
@@ -191,7 +191,7 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	/*--ending reading user Availble from fifo--*/
 	return userAvailable;
 }
-	
+
 boolean
 isValidUserName(char *userName, int room) {
     if (strlen(userName) == 0) {
@@ -205,12 +205,12 @@ void
 receiveMessage(char *msg, char *userName) {
     checkRowPosition();
     int i = 0, j = 0;
-
+    
 	char totalMessage[NAME_SIZE + MESSAGE_SIZE + 3] = {'\0'};
 	strcpy(totalMessage, userName);
 	strcat(totalMessage, ": ");
 	strcat(totalMessage, msg);
-
+    
 	while(j < (MESSAGE_SIZE + NAME_SIZE + 2) && totalMessage[j] != '\0') {
         printf("i = %d\n", i);
         if(((i+1) % (CHAT_COLS)) == 0) {
@@ -232,35 +232,33 @@ clearLastRow(void) {
 
 void
 welcome(int opt, pid_t roomPid, char* userName, pid_t pid) {
-    while(TRUE) {
-        system("clear");
-        printf("Welcome to chat room nbr. %d - PID: %d\n", opt, roomPid);
-        printDivision();
-        int i, j;
-        char msg[MESSAGE_SIZE+1] = {'\0'};
-        for(i = 0; i < CHAT_ROWS ; i++) {
-            for(j = 0; j < CHAT_COLS ; j++) {
-                printf("%c", chatMatrix[i][j]);
-            }
-            printf("\n");
+    system("clear");
+    printf("Welcome to chat room nbr. %d - PID: %d\n", opt, roomPid);
+    printDivision();
+    pid_t aux;
+    switch(aux = fork()){
+        case -1: {
+            perror("Failed to Fork");
+            exit(1);
         }
-        i = 0;
-        printDivision();
-        printf("%s: ", userName);
-        char c;
-        boolean flag = TRUE;
-        while((c = getchar()) != '\n' && flag) {
-            msg[i++] = c;
-            if (i == MESSAGE_SIZE) {
-                flag = FALSE;
-            }
-        }
-        if(!flag) {
-            while(getchar() != '\n');
-        }
-        msg[MESSAGE_SIZE] = '\0';
-        sendMessage(msg, userName);
+        case 0:
+            waitForMessages();
+            break;
+        default:
+            prompt();
+            break;
     }
+}
+
+void
+waitForMessages(void) {
+    printf("WAITING FOR MESSAGES\n");
+}
+
+void
+prompt(void) {
+    char par[MAX_PID_DIGITS+1] = {'\0'};
+    execl("prompt", userName, itoa(getpid(), par), NULL);
 }
 
 void

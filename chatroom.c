@@ -69,7 +69,7 @@ welcomeUsers(char *fifoRead, char *fifoWrite){
             exit(0);
 		}
 		if(aux1 > 0 && aux2 > 0) {
-			printf("User \"%s\" has joined room number %d - User PID = %s\nserver$:>", userName, roomNumber+1, pid);
+			printf("SERVER MESSAGE: User \"%s\" has joined room number %d - User PID = %s\nserver$:>", userName, roomNumber+1, pid);
             
 			hasRead = TRUE;
 			/*--ending reading user name--*/

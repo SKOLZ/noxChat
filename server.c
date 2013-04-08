@@ -12,9 +12,8 @@ main(int argc, char **argv) {
     void catchint(int);
     
     act.sa_handler = catchint;
-    sigemptyset(&(act.sa_mask));
+    sigfillset(&(act.sa_mask));
     
-    sigaddset(&(act.sa_mask), SIGINT);
     sigaction(SIGINT, &act, NULL);
     
 	system("clear");
@@ -25,7 +24,7 @@ main(int argc, char **argv) {
 	rooms = atoi(argv[1]);
 	selfPid = getpid();
 	if((pids = malloc(rooms*sizeof(pid_t))) == NULL){
-		perror("no enough memory");
+		perror("Not enough memory");
 	}
 	printf("NoxChat server\n==============\nProcess number %d\nRooms:\
 	 %d\n", selfPid, rooms);
