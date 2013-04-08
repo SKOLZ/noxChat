@@ -49,9 +49,13 @@ main(int argc, char **argv) {
 	saveData();
 	char command[NAME_SIZE+1];
 	usleep(20 *1000);
-	while(1) {
+    char c;
+	while(TRUE) {
+        i = 0;
 		printf("server$:>");
-		scanf("%s", command);
+		while ((c = getchar()) != '\n' && i < NAME_SIZE) {
+            command[i++] = c;
+        }
         checkCommand(command);
 	}
 }

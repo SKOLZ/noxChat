@@ -33,7 +33,6 @@ startPrompt(void) {
     boolean flag = TRUE;
     char c;
     while (TRUE) {
-        printf("ENTRO\n");
         printf("%s: ", userName);
         while((c = getchar()) != '\n' && flag) {
             message[i++] = c;
@@ -46,10 +45,8 @@ startPrompt(void) {
         }
         sendMessage();
     }
-    printf("SALI\n");
 }
 
 void
 sendMessage(void) {
-    printf("MANDO\n");
 }
