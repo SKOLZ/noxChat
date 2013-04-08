@@ -39,7 +39,7 @@ main(int argc, char **argv) {
 			exit(2);
 		}
 		case 0:
-			usleep(i*1000);
+			usleep(i*3000);
 			chatRoom(i, getpid());
 			break;
 		default:
@@ -99,6 +99,7 @@ chatRoom(int number, int pid) {
 	char par1[6];
 	char par2[6];
 	execl("chatroom", itoa(number, par1), itoa(pid, par2), NULL);
+	exit(0);
 }
 
 void
