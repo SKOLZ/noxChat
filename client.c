@@ -164,6 +164,9 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	if((fdWrite = open(sfifo, O_WRONLY)) < 0){
 		perror("write fifo open failed");
 	}
+    if((write(fdWrite, USER_CONNECTS, sizeof(USER_CONNECTS))) < 0){
+		perror("write name error");
+	}
 	if((write(fdWrite, userName, NAME_SIZE+1)) < 0){
 		perror("write name error");
 	}
@@ -203,25 +206,6 @@ isValidUserName(char *userName, int room) {
 }
 
 void
-receiveMessage(char *msg, char *userName) {
-    checkRowPosition();
-    int i = 0, j = 0;
-    
-	char totalMessage[NAME_SIZE + MESSAGE_SIZE + 3] = {'\0'};
-	strcpy(totalMessage, userName);
-	strcat(totalMessage, ": ");
-	strcat(totalMessage, msg);
-    
-	while(j < (MESSAGE_SIZE + NAME_SIZE + 2) && totalMessage[j] != '\0') {
-        if(((i+1) % (CHAT_COLS)) == 0) {
-            checkRowPosition();
-            i = tabulateChat();
-		}
-        chatMatrix[rowPointer][i++] = totalMessage[j++];
-	}
-}
-
-void
 clearLastRow(void) {
 	int i;
 	for(i = 0; i < CHAT_COLS ; i++) {
@@ -251,7 +235,32 @@ welcome(int opt, pid_t roomPid, char* userName, pid_t pid) {
 
 void
 waitForMessages(void) {
-    printf("WAITING FOR MESSAGES\n");
+    char rmsg[NAME_SIZE] = {'\0'};
+    int fd, aux;
+    char roomAux[MAX_PID_DIGITS+1] = {'\0'};
+    boolean hasRead = FALSE;
+	strcpy(rmsg, "r_msg");
+    strcat(rmsg, itoa(getpid(), roomAux));
+
+    if(mkfifo(rmsg, 0666) == -1){
+		perror("creating fifo read error");
+        exit(0);
+	}
+    
+	/*--creating fifos--*/
+    if((fd = open(rmsg, O_RDWR)) < 0) {
+		perror("Fifo open failed");
+        exit(0);
+	}
+    while (TRUE) {
+        message_t *message;
+        if((aux = read(fd, message, sizeof(message_t))) < 0){
+            perror("Failed to read user name.");
+            exit(0);
+        } else if (aux > 0) {
+            printf("%s: %s", message->userName, message->msg);
+        }
+    }
 }
 
 void

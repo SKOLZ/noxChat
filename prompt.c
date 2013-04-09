@@ -45,7 +45,6 @@ startPrompt(void) {
 void
 sendMessage(void) {
     char ds[NAME_SIZE] = {'\0'};
-    char msg[MESSAGE_SIZE+1] = {'\0'};
     boolean hasRead = FALSE;
 	strcpy(ds, "dsr");
     strcat(ds, roomPid);
@@ -56,7 +55,12 @@ sendMessage(void) {
 		perror("fifo open failed");
         exit(0);
 	}
-    if((aux = write(fd, msg, MESSAGE_SIZE+1)) < 0){
+    
+    message_t *msg = malloc(sizeof(message_t));
+    strcpy(msg->msg, message);
+    strcpy(msg->userName, userName);
+    msg->userPid = pid;
+    if((aux = write(fd, msg, sizeof(message_t))) < 0){
         perror("Failed to write message.");
         exit(0);
     }

@@ -142,6 +142,9 @@ shutdown(int status) {
 		remove(SchatRoom);
         remove(ds);
 	}
+    system("rm dsr*");
+    system("rm dsw*");
+    system("rm r_msg*");
 	
 	printf("Done...\n");
 	printf("Exited with error status: %d\n", status);

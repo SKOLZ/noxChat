@@ -18,18 +18,25 @@
     #define MAX_ROOM_DIGITS 2
     #define MAX_PID_DIGITS 6
     #define BREAKLINE printf("\n")
-    #define USER_MESSAGE 0
-    #define USER_CONNECTS 1
+    #define USER_MESSAGE "0"
+    #define USER_CONNECTS "1"
 
-    typedef struct {
+    typedef struct usrData {
         char usrName[NAME_SIZE];
         pid_t pid;
         struct usrData *next;
-    }usrData;
+    }usrData_t;
+
+    typedef struct message {
+        char msg[MESSAGE_SIZE+1];
+        char userName[NAME_SIZE+1];
+        pid_t userPid;
+    }message_t;
 
     typedef int boolean;
 
     void saveData(void);
+    void createFifo(char *fifoName);
     void chatRoom(int serverNumber, int processID);
     void showRooms(void);
     void shutdown(int status);
@@ -37,5 +44,6 @@
     void listenToUser(char *userName, pid_t userPid, pid_t dsPid);
     void addToUserList(char *userName, pid_t pid);
     void checkCommand(char *command);
-    void broadcast(char *msg, char *userName, pid_t userPid);
+    void broadcast(message_t *message);
+    void showUsers(void);
 #endif
