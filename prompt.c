@@ -5,26 +5,21 @@
 char userName[NAME_SIZE+1] = {'\0'};
 pid_t pid;
 char message[MESSAGE_SIZE+1] = {'\0'};
+char roomNumber[MAX_ROOM_DIGITS+1] = {'\0'};
+char roomPid[MAX_PID_DIGITS+1] = {'\0'};
 
 int
 main(int argc, char **argv) {
-    if (argc != 2) {
+    if (argc != 4) {
         printf("\nInvalid amount of arguments\n");
         exit(1);
     }
-    assignUserName(argv[0]);
+    strcpy(userName, argv[0]);
     pid = (pid_t)atoi(argv[1]);
+    strcpy(roomNumber, argv[2]);
+    strcpy(roomPid, argv[3]);
     startPrompt();
     exit(0);
-}
-
-void
-assignUserName(char *name) {
-    int i = 0;
-    while (i < NAME_SIZE && name[i] != '\0') {
-        userName[i] = name[i];
-        i++;
-    }
 }
 
 void
@@ -49,4 +44,20 @@ startPrompt(void) {
 
 void
 sendMessage(void) {
+    char ds[NAME_SIZE] = {'\0'};
+    char msg[MESSAGE_SIZE+1] = {'\0'};
+    boolean hasRead = FALSE;
+	strcpy(ds, "dsr");
+    strcat(ds, roomPid);
+
+	/*--creating fifos--*/
+    int fd, aux;
+    if((fd = open(ds, O_RDWR)) < 0){
+		perror("fifo open failed");
+        exit(0);
+	}
+    if((aux = write(fd, msg, MESSAGE_SIZE+1)) < 0){
+        perror("Failed to write message.");
+        exit(0);
+    }
 }

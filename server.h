@@ -18,6 +18,8 @@
     #define MAX_ROOM_DIGITS 2
     #define MAX_PID_DIGITS 6
     #define BREAKLINE printf("\n")
+    #define USER_MESSAGE 0
+    #define USER_CONNECTS 1
 
     typedef struct {
         char usrName[NAME_SIZE];
@@ -32,7 +34,8 @@
     void showRooms(void);
     void shutdown(int status);
     void welcomeUsers( char *fifoRead, char *fifoWrite);
-    void listenToUser(void);
+    void listenToUser(char *userName, pid_t userPid, pid_t dsPid);
     void addToUserList(char *userName, pid_t pid);
     void checkCommand(char *command);
+    void broadcast(char *msg, char *userName, pid_t userPid);
 #endif

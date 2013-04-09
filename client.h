@@ -8,7 +8,6 @@
 	void welcome(int opt, pid_t roomPid, char *userName, pid_t pid);
 	void receiveMessage(char *msg, char *userName);
 	void scrollDown();
-	void sendMessage(char *msg, char *userName);
 	void printDivision(void);
 	boolean checkUserInServer(char *userName, int room, pid_t pid);
 	void askRoomNumber(int rooms, pid_t *pids);

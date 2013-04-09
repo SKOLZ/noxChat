@@ -16,37 +16,37 @@ main(int argc, char **argv) {
 	roomPid = atoi(argv[1]);
 
 	int aux;
-	
+
 	char roomAux[MAX_ROOM_DIGITS];
 	char SchatRoom[NAME_SIZE];
 	char RchatRoom[NAME_SIZE];
-	
+
 	strcpy(SchatRoom, "SchatRoom"); 
 	strcpy(RchatRoom, "RchatRoom");
-	
+
 	strcat(SchatRoom, itoa(roomNumber+1, roomAux));
 	strcat(RchatRoom, itoa(roomNumber+1, roomAux));
-	
+
 	char *fifoRead = SchatRoom;
 	char *fifoWrite = RchatRoom;
-	
+
 	printf("\nChat room nbr. %d has been created with %d\n",\
 	roomNumber + 1, roomPid);
 	/*--creating fifos--*/
 	if(mkfifo(fifoRead, 0666) == -1){ 
 		perror("creating fifo read error");
-        exit(0);//NUEVOOOOOOOOOOOOOOOOOOOOOOOOOOO
+        exit(0);
 	}
 	if(mkfifo(fifoWrite, 0666) == -1){
 		perror("creating fifo write error");
-        exit(0);//NUEVOOOOOOOOOOOOOOOOOOOOOOOOOOO
+        exit(0);
 	}
 	
 	while(TRUE){
 		welcomeUsers(fifoRead, fifoWrite);
 	}
-}		
-		
+}
+
 void
 welcomeUsers(char *fifoRead, char *fifoWrite){
 	int fdRead, fdWrite, aux1, aux2;
@@ -91,7 +91,7 @@ welcomeUsers(char *fifoRead, char *fifoWrite){
 						break;
 					}
 					case 0: {
-						listenToUser();
+						listenToUser(userName, atoi(pid), getpid());
 						break;
 					}
 					default: {
@@ -129,8 +129,51 @@ addToUserList(char *userName, pid_t pid) {
 }
 
 void
-listenToUser(void) {
-    exit(0);
+listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
+    char ds[NAME_SIZE] = {'\0'};
+    char msg[MESSAGE_SIZE+1] = {'\0'};
+    char roomAux[MAX_PID_DIGITS+1] = {'\0'};
+    boolean hasRead = FALSE;
+	strcpy(ds, "dsr");
+    strcat(ds, itoa(dsPid, roomAux));
+
+	printf("\nDedicated server with pid %d has been created for user %s (%d)\n",\
+           dsPid, userName, userPid);
+	/*--creating fifos--*/
+	if(mkfifo(ds, 0666) == -1){
+		perror("creating fifo read error");
+        exit(0);
+	}
+    int fd, aux;
+    if((fd = open(ds, O_RDWR)) < 0){
+		perror("fifo open failed");
+        exit(0);
+	}
+    strcpy(ds, "dsw");
+    strcat(ds, itoa(dsPid, roomAux));
+    if(mkfifo(ds, 0666) == -1){
+		perror("creating fifo write error");
+        exit(0);
+	}
+    if((fd = open(ds, O_RDWR)) < 0){
+		perror("fifo open failed");
+        exit(0);
+	}
+    while (!hasRead) {
+        printf("Waiting for message...\n");
+        if((aux = read(fd, msg, NAME_SIZE+1)) < 0){
+            perror("Failed to read user name.");
+            exit(0);
+        } else if (aux > 0) {
+            hasRead = TRUE;
+            broadcast(msg, userName, userPid);
+        }
+    }
+}
+
+void
+broadcast(char *msg, char *userName, pid_t userPid) {
+    printf("Sending message...\n");
 }
 
 boolean

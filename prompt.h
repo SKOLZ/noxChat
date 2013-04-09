@@ -9,7 +9,6 @@
 #ifndef _prompt_h
 #define _prompt_h
 
-void assignUserName(char *name);
 void sendMessage(void);
 void startPrompt(void); 
 

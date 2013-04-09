@@ -116,10 +116,11 @@ showRooms(void) {
 void
 shutdown(int status) {
 	int i;
-	char roomAux[MAX_ROOM_DIGITS];
-	char SchatRoom[NAME_SIZE];
-	char RchatRoom[NAME_SIZE];
-	
+	char roomAux[MAX_ROOM_DIGITS] = {'\0'};
+	char SchatRoom[NAME_SIZE] = {'\0'};
+	char RchatRoom[NAME_SIZE] = {'\0'};
+	char ds[NAME_SIZE+1] = {'\0'};
+    
 	BREAKLINE;
 	printf("Freeing memory...");
 	
@@ -134,9 +135,12 @@ shutdown(int status) {
 		strcpy(RchatRoom, "RchatRoom");
 		strcat(SchatRoom, itoa(i+1, roomAux));
 		strcat(RchatRoom, itoa(i+1, roomAux));
-		
+		strcpy(ds, "ds");
+        strcat(ds, itoa(i+1, roomAux));
+        
 		remove(RchatRoom);
 		remove(SchatRoom);
+        remove(ds);
 	}
 	
 	printf("Done...\n");
