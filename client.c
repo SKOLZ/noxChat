@@ -165,12 +165,15 @@ checkUserInServer(char *userName, int room, pid_t pid) {
     if((write(fdWrite, &protocol, sizeof(char))) < 0){
 		perror("Write protocol error");
 	}
-	if((write(fdWrite, userName, NAME_SIZE+1)) < 0){
+    usrData_t *usrData = (usrData_t *)malloc(sizeof(usrData_t));
+    strcpy(usrData->userName, userName);
+    usrData->userPid = pid;
+    usrData->connectionTime = time(0);
+    
+	if((write(fdWrite, usrData, sizeof(usrData_t))) < 0){
 		perror("Write user name error");
 	}
-    if((write(fdWrite, &pid, sizeof(pid_t)))== -1){
-		perror("write name error");
-	}
+    free(usrData);
 	close(fdWrite);
 	/*ending writing name in fifo--*/
 	/*begining reading user Available from fifo--*/
@@ -244,7 +247,7 @@ waitForMessages(void) {
             perror("Failed to read user name");
             exit(0);
         } else {
-            printf("%s dice: %s\n", message->userName, message->msg);
+            printf("%s says: %s\n", message->userName, message->msg);
         }
         free(message);
     }

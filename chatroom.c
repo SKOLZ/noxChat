@@ -62,9 +62,7 @@ createFifo(char *fifoName) {
 
 void
 welcomeUsers(char *fifoRead, char *fifoWrite){
-	int fdRead, fdWrite, aux1, aux2, aux3;
-    char userName[NAME_SIZE+1] = {'\0'};
-    pid_t pid;
+	int fdRead, fdWrite, aux1, aux2;
     char protocol;
     
 	/*--begining reading user name--*/
@@ -86,24 +84,21 @@ welcomeUsers(char *fifoRead, char *fifoWrite){
             }
             broadcast(message);
         } else if(protocol == USER_CONNECTS) {
-            if((aux2 = read(fdRead, userName, NAME_SIZE+1)) < 0){
-                perror("Failed to read user name.");
+            usrData_t *usrData = (usrData_t *)malloc(sizeof(usrData_t));
+            if((aux2 = read(fdRead, usrData, sizeof(usrData_t))) < 0){
+                perror("Failed to read user structure.");
                 exit(0);
             }
-            if((aux3 = read(fdRead, &pid, sizeof(pid_t))) < 0){
-                perror("Failed to read pid.");
-                exit(0);
-            }
-            if(aux1 > 0 && aux2 > 0 && aux3 > 0) {
-                printf("\nSERVER MESSAGE: User \"%s\" has joined room number %d - User PID = %d\n", userName, roomNumber+1, pid);
+            if(aux1 > 0 && aux2 > 0) {
+                printf("\nSERVER MESSAGE: User \"%s\" has joined room number %d - User PID = %d\n", usrData->userName, roomNumber+1, usrData->userPid);
                 
                 /*--ending reading user name--*/
                 /*--begining writing user Available--*/
                 if((fdWrite = open(fifoWrite, O_WRONLY)) < 0){
                     perror("Oppening name Available in fifo failed");
                 }
-                if(uniqueUser(userName)) {
-                    addToUserList(userName, pid);
+                if(uniqueUser(usrData->userName)) {
+                    addToUserList(usrData);
                     if(write(fdWrite, "y", 2) == -1){
                         perror("Writing name Available failed");
                     }
@@ -115,13 +110,13 @@ welcomeUsers(char *fifoRead, char *fifoWrite){
                             break;
                         }
                         case 0: {
-                            listenToUser(userName, pid, getpid());
+                            listenToUser(usrData->userName, usrData->userPid, getpid());
                             break;
                         }
                         default: {
                             break;
                         }
-                    }	
+                    }
                 }
                 else{
                     if(write(fdWrite, "n", 2) == -1){
@@ -137,19 +132,15 @@ welcomeUsers(char *fifoRead, char *fifoWrite){
 }
 
 void
-addToUserList(char *userName, pid_t pid) {
+addToUserList(usrData_t *usrData) {
     if (users == NULL) {
-        users = (usrData_t *)malloc(sizeof(usrData_t));
-        strcpy(users->userName, userName);
-        users->userPid = pid;
+        users = usrData;
     } else {
         usrData_t *curr = users;
         while (curr->next != NULL) {
             curr = curr->next;
         }
-        curr->next = (usrData_t *)malloc(sizeof(usrData_t));
-        strcpy(curr->next->userName, userName);
-        curr->next->userPid = pid;
+        curr->next = usrData;
     }
     //showUsers();
 }

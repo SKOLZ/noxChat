@@ -8,6 +8,7 @@
     #include <unistd.h>
     #include <signal.h>
     #include "grlfun.h"
+    #include <time.h>
 
     #define TRUE 1
     #define FALSE 0
@@ -26,6 +27,7 @@
         char userName[NAME_SIZE+1];
         pid_t userPid;
         struct usrData *next;
+        time_t connectionTime;
     }usrData_t;
 
     typedef struct message {
@@ -43,7 +45,7 @@
     void shutdown(int status);
     void welcomeUsers( char *fifoRead, char *fifoWrite);
     void listenToUser(char *userName, pid_t userPid, pid_t dsPid);
-    void addToUserList(char *userName, pid_t pid);
+    void addToUserList(usrData_t *usrData);
     void removeFromUserList(char *userName);
     void checkCommand(char *command);
     void broadcast(message_t *message);
