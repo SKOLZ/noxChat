@@ -20,6 +20,7 @@
     #define BREAKLINE printf("\n")
     #define USER_MESSAGE '0'
     #define USER_CONNECTS '1'
+    #define PRICE 0.1f
 
     typedef struct usrData {
         char userName[NAME_SIZE+1];

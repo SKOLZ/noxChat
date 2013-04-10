@@ -9,6 +9,14 @@ int SchatRoomFD;
 
 int
 main(int argc, char **argv) {
+    static struct sigaction act;
+    void catchint(int);
+    
+    act.sa_handler = catchint;
+    sigfillset(&(act.sa_mask));
+    
+    sigaction(SIGINT, &act, NULL);
+    
 	if(argc != 2) {
 		perror("Invalid amount of arguments");
 		exit(1);
@@ -25,6 +33,18 @@ main(int argc, char **argv) {
     createFifo(SchatRoom);
     createFifo(RchatRoom);
 	welcomeUsers(SchatRoom, RchatRoom);
+}
+
+void
+catchint(int signo) {
+    message_t *serverMessage = (message_t *)malloc(sizeof(message_t));
+    strcpy(serverMessage->userName, "DEDICATED SERVER");
+    char msg[MESSAGE_SIZE+1] = "Server execution has been terminated suddenly. Please try connecting again later...\nERROR CODE: ";
+    char aux[6] = {'\0'};
+    strcat(msg, itoa(signo, aux));
+    strcpy(serverMessage->msg, msg);
+    serverMessage->userPid = getpid();
+    broadcast(serverMessage);
 }
 
 void

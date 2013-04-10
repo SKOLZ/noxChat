@@ -7,7 +7,7 @@
     boolean isNumber(char *s);
     void welcome(int opt);
 	void printDivision(void);
-    boolean isValidRoomNumber(int opt, int rooms);
+    boolean isValidRoomNumber(char *opt, int rooms);
 	boolean checkUserInServer(char *userName, int room, pid_t pid);
 	void askRoomNumber(int rooms, pid_t *pids);
     void waitForMessages(void);
