@@ -23,7 +23,7 @@ main(int argc, char **argv) {
     }
 	rooms = atoi(argv[1]);
 	selfPid = getpid();
-	if((pids = malloc(rooms*sizeof(pid_t))) == NULL){
+	if((pids = (pid_t *)malloc(rooms*sizeof(pid_t))) == NULL){
 		perror("Not enough memory");
 	}
 	printf("NoxChat server\n==============\nProcess number %d\nRooms:\
@@ -83,14 +83,12 @@ saveData(void) {
 		shutdown(3);
 	}
 	int wr;
-	int bytes[1] = {rooms};
-	if((wr = write(fd, bytes, sizeof(int))) < sizeof(int)) {
+	if((wr = write(fd, &rooms, sizeof(int))) < 0) {
 		perror("Failed to write byte info on server.cfg");
 		close(fd);
 		shutdown(4);
 	}
-	if((wr = write(fd, pids, rooms*sizeof(pid_t))) < \
-	rooms*sizeof(pid_t)) {
+	if((wr = write(fd, pids, rooms*sizeof(pid_t))) < 0) {
 		perror("Failed to write pids on server.cfg");
 		close(fd);
 		shutdown(5);
@@ -116,9 +114,9 @@ showRooms(void) {
 void
 shutdown(int status) {
 	int i;
-	char roomAux[MAX_ROOM_DIGITS] = {'\0'};
-	char SchatRoom[NAME_SIZE] = {'\0'};
-	char RchatRoom[NAME_SIZE] = {'\0'};
+	char roomAux[MAX_ROOM_DIGITS+1] = {'\0'};
+	char SchatRoom[NAME_SIZE+1] = {'\0'};
+	char RchatRoom[NAME_SIZE+1] = {'\0'};
 	char ds[NAME_SIZE+1] = {'\0'};
     
 	BREAKLINE;
@@ -142,9 +140,9 @@ shutdown(int status) {
 		remove(SchatRoom);
         remove(ds);
 	}
-    system("rm dsr*");
-    system("rm dsw*");
-    system("rm r_msg*");
+    system("rm -rf dsr*");
+    system("rm -rf dsw*");
+    system("rm -rf r_msg*");
 	
 	printf("Done...\n");
 	printf("Exited with error status: %d\n", status);

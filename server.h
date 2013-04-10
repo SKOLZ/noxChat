@@ -16,13 +16,13 @@
     #define CHAT_ROWS 20
     #define CHAT_COLS 80
     #define MAX_ROOM_DIGITS 2
-    #define MAX_PID_DIGITS 6
+    #define MAX_PID_DIGITS 10
     #define BREAKLINE printf("\n")
-    #define USER_MESSAGE "0"
-    #define USER_CONNECTS "1"
+    #define USER_MESSAGE '0'
+    #define USER_CONNECTS '1'
 
     typedef struct usrData {
-        char userName[NAME_SIZE];
+        char userName[NAME_SIZE+1];
         pid_t userPid;
         struct usrData *next;
     }usrData_t;

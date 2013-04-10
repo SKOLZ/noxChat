@@ -30,7 +30,6 @@ startPrompt(void) {
     while (TRUE) {
         i = 0;
         flag = TRUE;
-        printf("%s: ", userName);
         while((c = getchar()) != '\n' && flag) {
             message[i++] = c;
             if (i == MESSAGE_SIZE) {
@@ -59,7 +58,7 @@ sendMessage(void) {
         exit(0);
 	}
     
-    message_t *msg = malloc(sizeof(message_t));
+    message_t *msg = (message_t *)malloc(sizeof(message_t));
     strcpy(msg->msg, message);
     strcpy(msg->userName, userName);
     msg->userPid = atoi(userPid);
