@@ -22,8 +22,8 @@
     #define USER_CONNECTS "1"
 
     typedef struct usrData {
-        char usrName[NAME_SIZE];
-        pid_t pid;
+        char userName[NAME_SIZE];
+        pid_t userPid;
         struct usrData *next;
     }usrData_t;
 
@@ -43,6 +43,7 @@
     void welcomeUsers( char *fifoRead, char *fifoWrite);
     void listenToUser(char *userName, pid_t userPid, pid_t dsPid);
     void addToUserList(char *userName, pid_t pid);
+    void removeFromUserList(char *userName);
     void checkCommand(char *command);
     void broadcast(message_t *message);
     void showUsers(void);

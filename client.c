@@ -10,6 +10,7 @@ char chatMatrix[CHAT_ROWS][CHAT_COLS] = {'\0'};
 int rowPointer = 0;
 char roomNumber[MAX_ROOM_DIGITS+1] = {'\0'};
 char roomPid[MAX_PID_DIGITS+1] = {'\0'};
+pid_t clientPid;
 
 int
 main(void) {
@@ -17,6 +18,7 @@ main(void) {
 	int fd;
 	int amount[1];
 	pid_t* pids;
+    clientPid = getpid();
 	if((fd = open("server.cfg", O_RDONLY)) < 0) {
 		printf("Server is offline. Try connecting again later...\n");
 		exit(1);
@@ -110,7 +112,7 @@ isValidRoomNumber(char *opt, int rooms) {
 }
 
 void
-askRoomNumber(int rooms, int *pids) {
+askRoomNumber(int rooms, pid_t *pids) {
 	int room, i = 0;
     boolean flag;
     char c;
@@ -138,13 +140,13 @@ boolean
 checkUserInServer(char *userName, int room, pid_t pid) {
 	int fdWrite;
 	int fdRead;
-	char roomNumber[MAX_ROOM_DIGITS];
+	char roomNumber[MAX_ROOM_DIGITS+1] = {'\0'};
 	boolean hasRead = FALSE;
 	boolean userAvailable;
 	
-	char SchatRoom[NAME_SIZE];
-	char RchatRoom[NAME_SIZE];
-	char aPid[MAX_PID_DIGITS];
+	char SchatRoom[NAME_SIZE+1] = {'\0'};
+	char RchatRoom[NAME_SIZE+1] = {'\0'};
+	char aPid[MAX_PID_DIGITS+1] = {'\0'};
     
 	strcpy(SchatRoom, "SchatRoom"); 
 	strcpy(RchatRoom, "RchatRoom");
@@ -202,7 +204,7 @@ isValidUserName(char *userName, int room) {
         printf("ERROR: The user name must contain at least one character\n");
         return FALSE;
     }
-	return TRUE; //HARDCODEADO!!!
+	return TRUE;
 }
 
 void
@@ -225,10 +227,10 @@ welcome(int opt, pid_t roomPid, char* userName, pid_t pid) {
             exit(1);
         }
         case 0:
-            waitForMessages();
+            prompt();
             break;
         default:
-            prompt();
+            waitForMessages();
             break;
     }
 }
@@ -241,19 +243,17 @@ waitForMessages(void) {
     boolean hasRead = FALSE;
 	strcpy(rmsg, "r_msg");
     strcat(rmsg, itoa(getpid(), roomAux));
-
     if(mkfifo(rmsg, 0666) == -1){
 		perror("creating fifo read error");
         exit(0);
 	}
-    
 	/*--creating fifos--*/
     if((fd = open(rmsg, O_RDWR)) < 0) {
 		perror("Fifo open failed");
         exit(0);
 	}
     while (TRUE) {
-        message_t *message;
+        message_t *message = malloc(sizeof(message_t));
         if((aux = read(fd, message, sizeof(message_t))) < 0){
             perror("Failed to read user name.");
             exit(0);
@@ -266,7 +266,7 @@ waitForMessages(void) {
 void
 prompt(void) {
     char par[MAX_PID_DIGITS+1] = {'\0'};
-    execl("prompt", userName, itoa(getpid(), par), roomNumber, roomPid, NULL);
+    execl("prompt", userName, itoa(clientPid, par), roomNumber, roomPid, NULL);
 }
 
 void
