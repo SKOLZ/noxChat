@@ -61,7 +61,6 @@ sendMessage(void) {
     message_t *msg = (message_t *)malloc(sizeof(message_t));
     strcpy(msg->msg, message);
     strcpy(msg->userName, userName);
-    msg->userPid = atoi(userPid);
     if((aux = write(fd, msg, sizeof(message_t))) < 0){
         perror("Failed to write message.");
         exit(0);

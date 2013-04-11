@@ -141,7 +141,6 @@ shutdown(int status) {
         remove(ds);
 	}
     system("rm -rf dsr*");
-    system("rm -rf dsw*");
     system("rm -rf r_msg*");
 	
 	printf("Done...\n");

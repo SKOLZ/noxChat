@@ -43,7 +43,6 @@ catchint(int signo) {
     char aux[6] = {'\0'};
     strcat(msg, itoa(signo, aux));
     strcpy(serverMessage->msg, msg);
-    serverMessage->userPid = getpid();
     broadcast(serverMessage);
 }
 
@@ -82,7 +81,9 @@ welcomeUsers(char *fifoRead, char *fifoWrite){
                 perror("Failed to read messagef structure.");
                 exit(0);
             }
-            broadcast(message);
+            if (!isCommand(message)) {
+                broadcast(message);
+            }
         } else if(protocol == USER_CONNECTS) {
             usrData_t *usrData = (usrData_t *)malloc(sizeof(usrData_t));
             if((aux2 = read(fdRead, usrData, sizeof(usrData_t))) < 0){
@@ -129,6 +130,55 @@ welcomeUsers(char *fifoRead, char *fifoWrite){
             }
         }
     }
+}
+
+boolean
+isCommand(message_t *message) {
+    if (!strcmp(message->msg, COMMAND_COST)) {
+        message_t *serverMessage = (message_t *)malloc(sizeof(message_t));
+        strcpy(serverMessage->userName, "DEDICATED SERVER");
+        char msg[MESSAGE_SIZE+1] = "Current cost is ";
+        char aux[10] = {'\0'};
+        strcat(msg, itoa(((time(0)-getConnectionTime(message->userName))/60)*PRICE, aux));
+        strcpy(serverMessage->msg, msg);
+        sendMessageToUser(getUserPid(message->userName), serverMessage);
+        free(serverMessage);
+        return TRUE;
+    } else if(!strcmp(message->msg, COMMAND_QUIT)) {
+        message_t *serverMessage = (message_t *)malloc(sizeof(message_t));
+        strcpy(serverMessage->userName, "DEDICATED SERVER");
+        strcpy(serverMessage->msg, "You have left the chat room. Press ctrl. + C to terminate program...");
+        sendMessageToUser(getUserPid(message->userName), serverMessage);
+        removeFromUserList(message->userName);
+        printf("SERVER MESSAGE: User %s has left the chat room number %d\n", message->userName, roomNumber+1);
+        free(serverMessage);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+pid_t
+getUserPid(char *userName) {
+    usrData_t *curr = users;
+    while (curr != NULL) {
+        if (!strcmp(userName, curr->userName)) {
+            return curr->userPid;
+        }
+        curr = curr->next;
+    }
+    return -1;
+}
+
+time_t
+getConnectionTime(char *userName) {
+    usrData_t *curr = users;
+    while (curr != NULL) {
+        if (!strcmp(userName, curr->userName)) {
+            return curr->connectionTime;
+        }
+        curr = curr->next;
+    }
+    return -1;
 }
 
 void
@@ -214,29 +264,34 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
     }
 }
 
-
 void
 broadcast(message_t *message) {
     usrData_t *curr = users;
-    char fifo[NAME_SIZE+1] = {'\0'};
-    char userPid[MAX_PID_DIGITS+1] = {'\0'};
     int fd, aux;
     while (curr != NULL) {
-        if (strcmp(curr->userName, message->userName)) {
-            strcpy(fifo, "r_msg");
-            strcat(fifo, itoa(curr->userPid, userPid));
-            if((fd = open(fifo, O_WRONLY)) < 0){
-                perror("fifo open failed");
-                exit(0);
-            }
-            if((aux = write(fd, message, sizeof(message_t))) < 0){
-                perror("Failed to write user message.");
-                exit(0);
-            }
-            close(fd);
+        if (strcmp(curr->userName, message->userName) != 0) {
+            sendMessageToUser(getUserPid(curr->userName), message);
         }
         curr = curr->next;
     }
+}
+
+void
+sendMessageToUser(pid_t pid, message_t *message) {
+    int fd, aux;
+    char fifo[NAME_SIZE+1] = {'\0'};
+    char userPid[MAX_PID_DIGITS+1] = {'\0'};
+    strcpy(fifo, "r_msg");
+    strcat(fifo, itoa(pid, userPid));
+    if((fd = open(fifo, O_WRONLY)) < 0){
+        perror("fifo open failed");
+        exit(0);
+    }
+    if((aux = write(fd, message, sizeof(message_t))) < 0){
+        perror("Failed to write user message.");
+        exit(0);
+    }
+    close(fd);
 }
 
 boolean

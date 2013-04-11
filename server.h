@@ -21,7 +21,9 @@
     #define BREAKLINE printf("\n")
     #define USER_MESSAGE '0'
     #define USER_CONNECTS '1'
-    #define PRICE 0.1f
+    #define PRICE 1
+    #define COMMAND_QUIT "/quit"
+    #define COMMAND_COST "/cost"
 
     typedef struct usrData {
         char userName[NAME_SIZE+1];
@@ -33,12 +35,15 @@
     typedef struct message {
         char msg[MESSAGE_SIZE+1];
         char userName[NAME_SIZE+1];
-        pid_t userPid;
     }message_t;
 
     typedef int boolean;
 
     void saveData(void);
+    boolean isCommand(message_t *message);
+    pid_t getUserPid(char *userName);
+    time_t getConnectionTime(char *userName);
+    void sendMessageToUser(pid_t pid, message_t *message);
     void createFifo(char *fifoName);
     void chatRoom(int serverNumber, int processID);
     void showRooms(void);
