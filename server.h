@@ -40,6 +40,7 @@
     typedef int boolean;
 
     void saveData(void);
+    void freeUserList(void);
     boolean isCommand(message_t *message);
     pid_t getUserPid(char *userName);
     time_t getConnectionTime(char *userName);

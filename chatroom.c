@@ -3,7 +3,6 @@
 int roomNumber;
 int roomPid;
 int clientNumber;
-int *clientPids;
 usrData_t *users;
 int SchatRoomFD;
 
@@ -44,6 +43,20 @@ catchint(int signo) {
     strcat(msg, itoa(signo, aux));
     strcpy(serverMessage->msg, msg);
     broadcast(serverMessage);
+    freeUserList();
+    free(serverMessage);
+}
+
+void
+freeUserList(void) {
+    struct usrData_t *tmp;
+
+    while (users != NULL)
+    {
+        tmp = users;
+        users = users->next;
+        free(tmp);
+    }
 }
 
 void
@@ -84,6 +97,7 @@ welcomeUsers(char *fifoRead, char *fifoWrite){
             if (!isCommand(message)) {
                 broadcast(message);
             }
+            free(message);
         } else if(protocol == USER_CONNECTS) {
             usrData_t *usrData = (usrData_t *)malloc(sizeof(usrData_t));
             if((aux2 = read(fdRead, usrData, sizeof(usrData_t))) < 0){
@@ -92,7 +106,6 @@ welcomeUsers(char *fifoRead, char *fifoWrite){
             }
             if(aux1 > 0 && aux2 > 0) {
                 printf("\nSERVER MESSAGE: User \"%s\" has joined room number %d - User PID = %d\n", usrData->userName, roomNumber+1, usrData->userPid);
-                
                 /*--ending reading user name--*/
                 /*--begining writing user Available--*/
                 if((fdWrite = open(fifoWrite, O_WRONLY)) < 0){
@@ -250,14 +263,17 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
     while (TRUE) {
         if((aux = read(fd, message, sizeof(message_t))) < 0){
             perror("Failed to read user name.");
+            free(message);
             exit(0);
         } else if (aux > 0) {
             if((aux = write(SchatRoomFD, &protocol, sizeof(char))) < 0){
                 perror("Failed to write protocol.");
+                free(message);
                 exit(0);
             }
             if((aux = write(SchatRoomFD, message, sizeof(message_t))) < 0){
                 perror("Failed to write user message.");
+                free(message);
                 exit(0);
             }
         }

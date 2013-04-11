@@ -36,7 +36,8 @@ main(void) {
 			for(i = 0; i < amount; i++) {
 				printf("Room %d - PID: %d\n", i+1, pids[i]);
 			}
-            askRoomNumber(amount, pids);
+            free(pids);
+            askRoomNumber(amount);
 		}
 	}
 	exit(0);
@@ -109,7 +110,7 @@ isValidRoomNumber(char *opt, int rooms) {
 }
 
 void
-askRoomNumber(int rooms, pid_t *pids) {
+askRoomNumber(int rooms) {
 	int room, i = 0;
     boolean flag;
     char c;

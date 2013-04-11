@@ -65,4 +65,5 @@ sendMessage(void) {
         perror("Failed to write message.");
         exit(0);
     }
+    free(msg);
 }
