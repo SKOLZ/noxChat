@@ -5,6 +5,7 @@ int roomPid;
 int clientNumber;
 usrData_t *users;
 int SchatRoomFD;
+int clientsInRoom;
 
 int
 main(int argc, char **argv) {
@@ -49,7 +50,7 @@ catchint(int signo) {
 
 void
 freeUserList(void) {
-    struct usrData_t *tmp;
+    usrData_t *tmp;
 
     while (users != NULL)
     {
@@ -105,7 +106,6 @@ welcomeUsers(char *fifoRead, char *fifoWrite){
                 exit(0);
             }
             if(aux1 > 0 && aux2 > 0) {
-                printf("\nSERVER MESSAGE: User \"%s\" has joined room number %d - User PID = %d\n", usrData->userName, roomNumber+1, usrData->userPid);
                 /*--ending reading user name--*/
                 /*--begining writing user Available--*/
                 if((fdWrite = open(fifoWrite, O_WRONLY)) < 0){
@@ -113,6 +113,7 @@ welcomeUsers(char *fifoRead, char *fifoWrite){
                 }
                 if(uniqueUser(usrData->userName)) {
                     addToUserList(usrData);
+                    printf("\nSERVER MESSAGE: User \"%s\" has joined room number %d - User PID = %d\n", usrData->userName, roomNumber+1, usrData->userPid);
                     if(write(fdWrite, "y", 2) == -1){
                         perror("Writing name Available failed");
                     }
@@ -131,8 +132,7 @@ welcomeUsers(char *fifoRead, char *fifoWrite){
                             break;
                         }
                     }
-                }
-                else{
+                } else {
                     if(write(fdWrite, "n", 2) == -1){
                         perror("Writing name Availabl failed");
                     }
@@ -166,6 +166,28 @@ isCommand(message_t *message) {
         printf("SERVER MESSAGE: User %s has left the chat room number %d\n", message->userName, roomNumber+1);
         free(serverMessage);
         return TRUE;
+    } else if(!strcmp(message->msg, COMMAND_USERS)) {
+        message_t *serverMessage = (message_t *)malloc(sizeof(message_t));
+        strcpy(serverMessage->userName, "DEDICATED SERVER");
+        int msgLenth = 0;
+        usrData_t *curr = users;
+        strcpy(serverMessage->msg, "\n\nUsers in current chat room are:\n-------------------------------\n");
+        while (curr != NULL) {
+            if (msgLenth > MESSAGE_SIZE-3 || msgLenth + strlen(curr->userName) > MESSAGE_SIZE ) {
+                strcat(serverMessage->msg, "...");
+                sendMessageToUser(getUserPid(message->userName), serverMessage);
+                return;
+            } else {
+                strcat(serverMessage->msg, curr->userName);
+                strcat(serverMessage->msg, "\n");
+            }
+            msgLenth += strlen(curr->userName)+1;
+            curr = curr->next;
+        }
+        serverMessage->msg[strlen(serverMessage->msg)] = '\0';
+        sendMessageToUser(getUserPid(message->userName), serverMessage);
+        free(serverMessage);
+        return TRUE;
     }
     return FALSE;
 }
@@ -196,6 +218,8 @@ getConnectionTime(char *userName) {
 
 void
 addToUserList(usrData_t *usrData) {
+    message_t *serverMessage = (message_t *)malloc(sizeof(message_t));
+    
     if (users == NULL) {
         users = usrData;
     } else {
@@ -205,7 +229,11 @@ addToUserList(usrData_t *usrData) {
         }
         curr->next = usrData;
     }
-    //showUsers();
+    strcpy(serverMessage->msg, "Hello! I've joined your chat room!");
+    strcpy(serverMessage->userName, usrData->userName);
+    broadcast(serverMessage);
+    free(serverMessage);
+    clientsInRoom++;
 }
 
 void
@@ -219,6 +247,7 @@ removeFromUserList(char *userName) {
             } else {
                 users = curr->next;
             }
+            clientsInRoom--;
             free(curr);
             return;
         }
@@ -228,7 +257,7 @@ removeFromUserList(char *userName) {
 }
 
 void
-showUsers(void) {
+getUsers(void) {
     printf("Users in room %d:\n", roomNumber);
     usrData_t *curr = users;
     while (curr != NULL) {
@@ -312,5 +341,12 @@ sendMessageToUser(pid_t pid, message_t *message) {
 
 boolean
 uniqueUser(char* userName){
-	return TRUE; //HARCODEADOOOOO!!!!!!!!!!
+    usrData_t *curr = users;
+    while (curr != NULL) {
+        if (!strcmp(curr->userName, userName)) {
+            return FALSE;
+        }
+        curr = curr->next;
+    }
+    return TRUE;
 }

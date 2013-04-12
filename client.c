@@ -5,7 +5,7 @@
 #include "server.h"
 #include "client.h"
 
-char userName[NAME_SIZE+1];
+char userName[NAME_SIZE+1] = {'\0'};
 char chatMatrix[CHAT_ROWS][CHAT_COLS] = {'\0'};
 int rowPointer = 0;
 char roomNumber[MAX_ROOM_DIGITS+1] = {'\0'};
@@ -56,10 +56,11 @@ isNumber(char *s) {
 
 void
 connect(int room) {
-    int i = 0;
+    int i;
 	char c;
     boolean flag;
     do {
+        i = 0;
         printf("User name: ");
         flag = TRUE;
         while((c = getchar()) != '\n' && flag) {
@@ -71,7 +72,7 @@ connect(int room) {
         if(!flag) {
             while(getchar() != '\n');
         }
-        userName[NAME_SIZE] = '\0';
+        userName[i] = '\0';
     } while (!isValidUserName(userName, room) || checkUserInServer(userName, room, getpid()));
 }
 
@@ -170,7 +171,6 @@ checkUserInServer(char *userName, int room, pid_t pid) {
     strcpy(usrData->userName, userName);
     usrData->userPid = pid;
     usrData->connectionTime = time(0);
-    
 	if((write(fdWrite, usrData, sizeof(usrData_t))) < 0){
 		perror("Write user name error");
 	}
@@ -187,6 +187,7 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 				userAvailable = FALSE;
 			}
 			else{
+                printf("That user name is in use. Please select another one.\n");
 				userAvailable = TRUE;
 			}
 			hasRead = TRUE;

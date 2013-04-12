@@ -47,7 +47,7 @@ main(int argc, char **argv) {
 	}
 	showRooms();
 	saveData();
-	char command[NAME_SIZE+1];
+	char command[NAME_SIZE+1] = {'\0'};
 	usleep(20 *1000);
     char c;
 	while(TRUE) {
@@ -56,6 +56,7 @@ main(int argc, char **argv) {
 		while ((c = getchar()) != '\n' && i < NAME_SIZE) {
             command[i++] = c;
         }
+        command[i] = '\0';
         checkCommand(command);
 	}
 }
@@ -127,23 +128,13 @@ shutdown(int status) {
 	printf("Done...\n");
 	printf("Erasing server data...");
 	
-	remove("server.cfg");
-	for(i = 0 ; i<rooms ; i++){
-		strcpy(SchatRoom, "SchatRoom"); 
-		strcpy(RchatRoom, "RchatRoom");
-		strcat(SchatRoom, itoa(i+1, roomAux));
-		strcat(RchatRoom, itoa(i+1, roomAux));
-		strcpy(ds, "ds");
-        strcat(ds, itoa(i+1, roomAux));
-        
-		remove(RchatRoom);
-		remove(SchatRoom);
-        remove(ds);
-	}
+	system("rm -rf server.cfg");
+    system("rm -rf SchatRoom*");
+    system("rm -rf RchatRoom*");
     system("rm -rf dsr*");
     system("rm -rf r_msg*");
 	
 	printf("Done...\n");
-	printf("Exited with error status: %d\n", status);
+	printf("Exited with status: %d\n", status);
 	exit(status);
 }

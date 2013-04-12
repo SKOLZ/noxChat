@@ -24,6 +24,7 @@
     #define PRICE 1
     #define COMMAND_QUIT "/quit"
     #define COMMAND_COST "/cost"
+    #define COMMAND_USERS "/users"
 
     typedef struct usrData {
         char userName[NAME_SIZE+1];
