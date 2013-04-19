@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "server.h"
 #include "prompt.h"
 
@@ -6,7 +5,7 @@ char userName[NAME_SIZE+1] = {'\0'};
 char userPid[MAX_PID_DIGITS+1] = {'\0'};
 char message[MESSAGE_SIZE+1] = {'\0'};
 char roomNumber[MAX_ROOM_DIGITS+1] = {'\0'};
-char dsPid[MAX_PID_DIGITS+1] = {'\0'};
+char roomPid[MAX_PID_DIGITS+1] = {'\0'};
 
 int
 main(int argc, char **argv) {
@@ -17,7 +16,7 @@ main(int argc, char **argv) {
     strcpy(userName, argv[0]);
     strcpy(userPid, argv[1]);
     strcpy(roomNumber, argv[2]);
-    strcpy(dsPid, argv[3]);
+    strcpy(roomPid, argv[3]);
     startPrompt();
     exit(0);
 }
@@ -52,8 +51,8 @@ sendMessage(void) {
     strcat(ds, userPid);
 
 	/*--creating fifos--*/
-    int fd, aux;
-    if((fd = open(ds, O_RDWR)) < 0){
+    int id, aux;
+    if((id = getIdentifier(ds, O_RDWR)) < 0){
 		perror("fifo open failed");
         exit(0);
 	}
@@ -61,7 +60,7 @@ sendMessage(void) {
     message_t *msg = (message_t *)malloc(sizeof(message_t));
     strcpy(msg->msg, message);
     strcpy(msg->userName, userName);
-    if((aux = write(fd, msg, sizeof(message_t))) < 0){
+    if((aux = putInfo(id, msg, sizeof(message_t), atoi(userPid))) < 0){
         perror("Failed to write message.");
         exit(0);
     }

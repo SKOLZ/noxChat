@@ -4,13 +4,14 @@ int roomNumber;
 int roomPid;
 int clientNumber;
 usrData_t *users;
-int SchatRoomFD;
+int SchatRoomID;
 int clientsInRoom;
 
 int
 main(int argc, char **argv) {
     static struct sigaction act;
     void catchint(int);
+	char roomAux[MAX_ROOM_DIGITS+1] = {'\0'};
     
     act.sa_handler = catchint;
     sigfillset(&(act.sa_mask));
@@ -25,13 +26,20 @@ main(int argc, char **argv) {
 	roomPid = atoi(argv[1]);
 
     printf("\nChat room nbr. %d has been created with PID %d\n", roomNumber + 1, roomPid);
-    
-	int aux;
 
-    char SchatRoom[NAME_SIZE+1] = "SchatRoom";
+	char SchatRoom[NAME_SIZE+1] = "SchatRoom";
     char RchatRoom[NAME_SIZE+1] = "RchatRoom";
-    createFifo(SchatRoom);
-    createFifo(RchatRoom);
+	strcat(SchatRoom, itoa(roomNumber+1, roomAux));
+	strcat(RchatRoom, itoa(roomNumber+1, roomAux));
+	
+    if(createIPC(SchatRoom) == -1){
+		perror("creating fifo write error");
+        exit(0);
+    }
+    if(createIPC(RchatRoom) == -1){
+		perror("creating fifo read error");
+        exit(0);
+    }
 	welcomeUsers(SchatRoom, RchatRoom);
 }
 
@@ -61,61 +69,46 @@ freeUserList(void) {
 }
 
 void
-createFifo(char *fifoName) {
-    char roomAux[MAX_ROOM_DIGITS+1] = {'\0'};
-    
-	strcat(fifoName, itoa(roomNumber+1, roomAux));
-    int fd;
-	/*--creating fifos--*/
-	if((mkfifo(fifoName, 0666)) == -1){ 
-		perror("creating fifo read error");
-        exit(0);
-	}
-}
-
-void
-welcomeUsers(char *fifoRead, char *fifoWrite){
-	int fdRead, fdWrite, aux1, aux2;
+welcomeUsers(char *reader, char *writer){
+	int readerID, writerID, aux1, aux2;
     char protocol;
-    
 	/*--begining reading user name--*/
-	if((fdRead = open(fifoRead, O_RDWR)) < 0){
+	if((readerID = getIdentifier(reader, O_RDWR)) < 0){
 		perror("Fifo open failed");
         exit(0);
-	}
-    SchatRoomFD = fdRead;
+    }
+    SchatRoomID = readerID;
 	while(TRUE){
-        if((aux1 = read(fdRead, &protocol, sizeof(char))) < 0){
+		if((aux1 = getInfo(readerID, &protocol, sizeof(char), roomPid)) < 0){
 			perror("Failed to read protocol.");
-            exit(0);
+			exit(0);
 		}
         if(protocol == USER_MESSAGE) {
             message_t *message = (message_t *)malloc(sizeof(message_t));
-            if((aux1 = read(fdRead, message, sizeof(message_t))) < 0){
-                perror("Failed to read messagef structure.");
-                exit(0);
-            }
+            if((aux1 = getInfo(readerID, message, sizeof(message_t), roomPid)) < 0){
+				perror("Failed to read protocol.");
+				exit(0);
+			}
             if (!isCommand(message)) {
                 broadcast(message);
             }
             free(message);
         } else if(protocol == USER_CONNECTS) {
             usrData_t *usrData = (usrData_t *)malloc(sizeof(usrData_t));
-            if((aux2 = read(fdRead, usrData, sizeof(usrData_t))) < 0){
-                perror("Failed to read user structure.");
-                exit(0);
-            }
+            if((aux2 = getInfo(readerID, usrData, sizeof(usrData_t), roomPid)) < 0){
+				perror("Failed to read protocol.");
+				exit(0);
+			}
             if(aux1 > 0 && aux2 > 0) {
-                /*--ending reading user name--*/
-                /*--begining writing user Available--*/
-                if((fdWrite = open(fifoWrite, O_WRONLY)) < 0){
-                    perror("Oppening name Available in fifo failed");
-                }
+                if((writerID = getIdentifier(writer, O_WRONLY)) < 0){
+					perror("Fifo open failed");
+					exit(0);
+				}
                 if(uniqueUser(usrData->userName)) {
                     addToUserList(usrData);
                     printf("\nSERVER MESSAGE: User \"%s\" has joined room number %d - User PID = %d\n", usrData->userName, roomNumber+1, usrData->userPid);
-                    if(write(fdWrite, "y", 2) == -1){
-                        perror("Writing name Available failed");
+					if(putInfo(writerID, "y", 2, roomPid) == -1){
+						perror("Writing name Available failed");
                     }
                     /*-- creatin dedicated server for user--*/
                     switch(fork()){
@@ -133,11 +126,11 @@ welcomeUsers(char *fifoRead, char *fifoWrite){
                         }
                     }
                 } else {
-                    if(write(fdWrite, "n", 2) == -1){
-                        perror("Writing name Availabl failed");
+					if(putInfo(writerID, "n", 2, roomPid) == -1){
+						perror("Writing name Available failed");
                     }
                 }
-                close(fdWrite);
+                endIPC(writerID);
                 /*ending writing user available--*/
                 
             }
@@ -278,29 +271,28 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
 
 	printf("\nDedicated server with pid %d has been created for user %s (%d)\n",\
            dsPid, userName, userPid);
-	/*--creating fifos--*/
-	if(mkfifo(ds, 0666) == -1){
+	if(createIPC(ds) == -1){
 		perror("creating fifo read error");
         exit(0);
-	}
-    int fd, aux;
-    if((fd = open(ds, O_RDWR)) < 0){
-		perror("fifo open failed");
+    }
+    int ID, aux;
+    if((ID = getIdentifier(ds, O_RDWR)) < 0){
+		perror("Fifo open failed");
         exit(0);
-	}
+    }
     message_t *message = (message_t *)malloc(sizeof(message_t));
     while (TRUE) {
-        if((aux = read(fd, message, sizeof(message_t))) < 0){
+        if((aux = getInfo(ID, message, sizeof(message_t), userPid)) < 0){
             perror("Failed to read user name.");
             free(message);
             exit(0);
         } else if (aux > 0) {
-            if((aux = write(SchatRoomFD, &protocol, sizeof(char))) < 0){
+            if((aux = putInfo(SchatRoomID, &protocol, sizeof(char), roomPid)) < 0){
                 perror("Failed to write protocol.");
                 free(message);
                 exit(0);
             }
-            if((aux = write(SchatRoomFD, message, sizeof(message_t))) < 0){
+            if((aux = putInfo(SchatRoomID, message, sizeof(message_t), roomPid)) < 0){
                 perror("Failed to write user message.");
                 free(message);
                 exit(0);
@@ -312,7 +304,7 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
 void
 broadcast(message_t *message) {
     usrData_t *curr = users;
-    int fd, aux;
+    int id, aux;
     while (curr != NULL) {
         if (strcmp(curr->userName, message->userName) != 0) {
             sendMessageToUser(getUserPid(curr->userName), message);
@@ -323,20 +315,20 @@ broadcast(message_t *message) {
 
 void
 sendMessageToUser(pid_t pid, message_t *message) {
-    int fd, aux;
-    char fifo[NAME_SIZE+1] = {'\0'};
+    int id, aux;
+    char IPCname[NAME_SIZE+1] = {'\0'};
     char userPid[MAX_PID_DIGITS+1] = {'\0'};
-    strcpy(fifo, "r_msg");
-    strcat(fifo, itoa(pid, userPid));
-    if((fd = open(fifo, O_WRONLY)) < 0){
+    strcpy(IPCname, "r_msg");
+    strcat(IPCname, itoa(pid, userPid));
+    if((id = getIdentifier(IPCname, O_WRONLY)) < 0){
         perror("fifo open failed");
         exit(0);
     }
-    if((aux = write(fd, message, sizeof(message_t))) < 0){
+    if((aux = putInfo(id, message, sizeof(message_t), pid*2)) < 0){
         perror("Failed to write user message.");
         exit(0);
     }
-    close(fd);
+    endIPC(id);
 }
 
 boolean

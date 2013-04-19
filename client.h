@@ -9,7 +9,7 @@
 	void printDivision(void);
     boolean isValidRoomNumber(char *opt, int rooms);
 	boolean checkUserInServer(char *userName, int room, pid_t pid);
-	void askRoomNumber(int rooms);
+	void askRoomNumber(int rooms, pid_t* pids);
     void waitForMessages(void);
     void prompt(void);
 #endif

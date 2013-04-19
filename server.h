@@ -7,9 +7,8 @@
     #include <stdlib.h>
     #include <unistd.h>
     #include <signal.h>
-    #include "grlfun.h"
     #include <time.h>
-
+    
     #define TRUE 1
     #define FALSE 0
     #define MESSAGE_SIZE 140
@@ -25,7 +24,11 @@
     #define COMMAND_QUIT "/quit"
     #define COMMAND_COST "/cost"
     #define COMMAND_USERS "/users"
-
+    #define QUEUE_KEY (key_t)0100
+        
+    #include "grlfun.h"
+    #include "marshall.h"
+    
     typedef struct usrData {
         char userName[NAME_SIZE+1];
         pid_t userPid;

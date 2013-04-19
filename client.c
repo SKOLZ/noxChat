@@ -1,7 +1,3 @@
-#include <fcntl.h>
-#include <stdio.h>
-#include <errno.h>
-#include <unistd.h>
 #include "server.h"
 #include "client.h"
 
@@ -36,8 +32,7 @@ main(void) {
 			for(i = 0; i < amount; i++) {
 				printf("Room %d - PID: %d\n", i+1, pids[i]);
 			}
-            free(pids);
-            askRoomNumber(amount);
+            askRoomNumber(amount, pids);
 		}
 	}
 	exit(0);
@@ -111,9 +106,10 @@ isValidRoomNumber(char *opt, int rooms) {
 }
 
 void
-askRoomNumber(int rooms) {
+askRoomNumber(int rooms, pid_t* pids) {
 	int room, i = 0;
     boolean flag;
+    char roomAux[MAX_ROOM_DIGITS+1] = {'\0'};
     char c;
 	do {
         i = 0;
@@ -130,6 +126,8 @@ askRoomNumber(int rooms) {
         }
         roomNumber[MAX_ROOM_DIGITS] = '\0';
 		room = atoi(roomNumber);
+		strcpy(roomPid, itoa(pids[room-1], roomAux));
+		free(pids);
 	}while (!isValidRoomNumber(roomNumber, rooms));
     connect(room);
 	welcome(room);
@@ -137,8 +135,8 @@ askRoomNumber(int rooms) {
 
 boolean
 checkUserInServer(char *userName, int room, pid_t pid) {
-	int fdWrite;
-	int fdRead;
+	int idWrite;
+	int idRead;
 	char roomNumber[MAX_ROOM_DIGITS+1] = {'\0'};
 	boolean hasRead = FALSE;
 	boolean userAvailable;
@@ -150,36 +148,33 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	strcat(SchatRoom, itoa(room, roomNumber));
 	strcat(RchatRoom, itoa(room, roomNumber));
 	
-	char *sfifo = SchatRoom;
-	char *rfifo = RchatRoom;
+	char *sIPCname = SchatRoom;
+	char *rIPCname = RchatRoom;
 	char protocol = USER_CONNECTS;
     
 	int aux;
-	char result[NAME_SIZE+1];
+	char result[2];
 	/*-- open read before --*/
-	if((fdRead = open(rfifo, O_RDWR)) < 0){
-		perror("read fifo open failed");
-	}
-	/*-- begining writing name in fifo --*/
-	if((fdWrite = open(sfifo, O_WRONLY)) < 0){
+	if((idWrite = getIdentifier(sIPCname, O_WRONLY)) < 0){
 		perror("write fifo open failed");
 	}
-    if((write(fdWrite, &protocol, sizeof(char))) < 0){
+    if(putInfo(idWrite, &protocol, sizeof(char), atoi(roomPid)) < 0){
 		perror("Write protocol error");
 	}
     usrData_t *usrData = (usrData_t *)malloc(sizeof(usrData_t));
     strcpy(usrData->userName, userName);
     usrData->userPid = pid;
     usrData->connectionTime = time(0);
-	if((write(fdWrite, usrData, sizeof(usrData_t))) < 0){
+	if(putInfo(idWrite, usrData, sizeof(usrData_t), atoi(roomPid)) < 0){
 		perror("Write user name error");
 	}
     free(usrData);
-	close(fdWrite);
-	/*ending writing name in fifo--*/
-	/*begining reading user Available from fifo--*/
+	endIPC(idWrite);
 	while(!hasRead){
-		if((aux = read(fdRead, result, NAME_SIZE+1)) < 0){
+		if((idRead = getIdentifier(rIPCname, O_RDWR)) < 0){
+			perror("read fifo open failed");
+		}
+		if((aux = getInfo(idRead, result, 2, atoi(roomPid))) < 0){
 			perror("Read failed");
 		}
 		if(aux > 0){
@@ -193,7 +188,7 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 			hasRead = TRUE;
 		}
 	}
-	close(fdWrite);
+	endIPC(idWrite);
 	/*--ending reading user Availble from fifo--*/
 	return userAvailable;
 }
@@ -230,22 +225,22 @@ welcome(int opt) {
 void
 waitForMessages(void) {
     char rmsg[NAME_SIZE+1] = "r_msg";
-    int fd, aux;
+    int id, aux;
     char roomAux[MAX_PID_DIGITS+1] = {'\0'};
     
     strcat(rmsg, itoa(getpid(), roomAux));
-    if(mkfifo(rmsg, 0666) == -1){
+    if(createIPC(rmsg) == -1){
 		perror("Creating rmsg fifo error");
         exit(0);
 	}
 	/*--creating fifos--*/
-    if((fd = open(rmsg, O_RDWR)) < 0) {
+    if((id = getIdentifier(rmsg, O_RDWR)) < 0) {
 		perror("rmsg fifo open failed");
         exit(0);
 	}
     while (TRUE) {
         message_t *message = (message_t *)malloc(sizeof(message_t));
-        if((aux = read(fd, message, sizeof(message_t))) < 0){
+        if((aux = getInfo(id, message, sizeof(message_t), clientPid*2)) < 0){
             perror("Failed to read user name");
             exit(0);
         } else {

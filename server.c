@@ -1,6 +1,5 @@
 #include "server.h"
 
-
 pid_t selfPid;
 pid_t *pids;
 int rooms;
@@ -129,10 +128,8 @@ shutdown(int status) {
 	printf("Erasing server data...");
 	
 	system("rm -rf server.cfg");
-    system("rm -rf SchatRoom*");
-    system("rm -rf RchatRoom*");
-    system("rm -rf dsr*");
-    system("rm -rf r_msg*");
+	
+	removeIPC();
 	
 	printf("Done...\n");
 	printf("Exited with status: %d\n", status);
