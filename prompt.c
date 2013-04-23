@@ -47,6 +47,7 @@ void
 sendMessage(void) {
     char ds[NAME_SIZE+1] = {'\0'};
     boolean hasRead = FALSE;
+    info_t messageInfo;
 	strcpy(ds, "dsr");
     strcat(ds, userPid);
 
@@ -60,7 +61,9 @@ sendMessage(void) {
     message_t *msg = (message_t *)malloc(sizeof(message_t));
     strcpy(msg->msg, message);
     strcpy(msg->userName, userName);
-    if((aux = putInfo(id, msg, sizeof(message_t), atoi(userPid))) < 0){
+    memcpy(messageInfo.mtext, msg, sizeof(message_t));
+    messageInfo.mtype = atoi(userPid);
+    if((aux = putInfo(id, &messageInfo, sizeof(info_t))) < 0){
         perror("Failed to write message.");
         exit(0);
     }

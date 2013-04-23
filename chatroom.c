@@ -72,6 +72,7 @@ void
 welcomeUsers(char *reader, char *writer){
 	int readerID, writerID, aux1, aux2;
     char protocol;
+    info_t confirmationInfo;
 	/*--begining reading user name--*/
 	if((readerID = getIdentifier(reader, O_RDWR)) < 0){
 		perror("Fifo open failed");
@@ -79,26 +80,32 @@ welcomeUsers(char *reader, char *writer){
     }
     SchatRoomID = readerID;
 	while(TRUE){
-		if((aux1 = getInfo(readerID, &protocol, sizeof(char), roomPid)) < 0){
+		info_t protocolInfo;
+		if((aux1 = getInfo(readerID, &protocolInfo, sizeof(info_t), roomPid)) < 0){
 			perror("Failed to read protocol.");
 			exit(0);
 		}
+		memcpy(&protocol, protocolInfo.mtext, sizeof(char));
         if(protocol == USER_MESSAGE) {
+			info_t messageInfo;
             message_t *message = (message_t *)malloc(sizeof(message_t));
-            if((aux1 = getInfo(readerID, message, sizeof(message_t), roomPid)) < 0){
+            if((aux1 = getInfo(readerID, &messageInfo, sizeof(info_t), roomPid)) < 0){
 				perror("Failed to read protocol.");
 				exit(0);
 			}
+			memcpy(message, &messageInfo.mtext, sizeof(message_t));
             if (!isCommand(message)) {
                 broadcast(message);
             }
             free(message);
         } else if(protocol == USER_CONNECTS) {
+			info_t userInfo;
             usrData_t *usrData = (usrData_t *)malloc(sizeof(usrData_t));
-            if((aux2 = getInfo(readerID, usrData, sizeof(usrData_t), roomPid)) < 0){
+            if((aux2 = getInfo(readerID, &userInfo, sizeof(info_t), roomPid)) < 0){
 				perror("Failed to read protocol.");
 				exit(0);
 			}
+			memcpy(usrData, userInfo.mtext, sizeof(usrData_t));
             if(aux1 > 0 && aux2 > 0) {
                 if((writerID = getIdentifier(writer, O_WRONLY)) < 0){
 					perror("Fifo open failed");
@@ -107,7 +114,9 @@ welcomeUsers(char *reader, char *writer){
                 if(uniqueUser(usrData->userName)) {
                     addToUserList(usrData);
                     printf("\nSERVER MESSAGE: User \"%s\" has joined room number %d - User PID = %d\n", usrData->userName, roomNumber+1, usrData->userPid);
-					if(putInfo(writerID, "y", 2, roomPid) == -1){
+                    memcpy(confirmationInfo.mtext, "y", 2);
+                    confirmationInfo.mtype = roomPid*3;
+					if(putInfo(writerID, &confirmationInfo, sizeof(info_t)) == -1){
 						perror("Writing name Available failed");
                     }
                     /*-- creatin dedicated server for user--*/
@@ -126,7 +135,9 @@ welcomeUsers(char *reader, char *writer){
                         }
                     }
                 } else {
-					if(putInfo(writerID, "n", 2, roomPid) == -1){
+					memcpy(confirmationInfo.mtext, "n", 2);
+                    confirmationInfo.mtype = roomPid;
+					if(putInfo(writerID, &confirmationInfo, sizeof(info_t)) == -1){
 						perror("Writing name Available failed");
                     }
                 }
@@ -266,6 +277,8 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
     char roomAux[MAX_PID_DIGITS+1] = {'\0'};
     char protocol = USER_MESSAGE;
     boolean hasRead = FALSE;
+    info_t protocolInfo;
+    info_t messageInfo;
 	strcpy(ds, "dsr");
     strcat(ds, itoa(userPid, roomAux));
 
@@ -280,21 +293,25 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
 		perror("Fifo open failed");
         exit(0);
     }
-    message_t *message = (message_t *)malloc(sizeof(message_t));
+    //message_t *message = (message_t *)malloc(sizeof(message_t));
     while (TRUE) {
-        if((aux = getInfo(ID, message, sizeof(message_t), userPid)) < 0){
+        if((aux = getInfo(ID, &messageInfo, sizeof(info_t), userPid)) < 0){
             perror("Failed to read user name.");
-            free(message);
+      //      free(message);
             exit(0);
         } else if (aux > 0) {
-            if((aux = putInfo(SchatRoomID, &protocol, sizeof(char), roomPid)) < 0){
+			memcpy(protocolInfo.mtext, &protocol, 1);
+            protocolInfo.mtype = roomPid;
+            if((aux = putInfo(SchatRoomID, &protocolInfo, sizeof(info_t))) < 0){
                 perror("Failed to write protocol.");
-                free(message);
+        //        free(message);
                 exit(0);
             }
-            if((aux = putInfo(SchatRoomID, message, sizeof(message_t), roomPid)) < 0){
+            //memcpy(messageInfo.mtext, message, sizeof(message_t);
+            messageInfo.mtype = roomPid;
+            if((aux = putInfo(SchatRoomID, &messageInfo, sizeof(info_t))) < 0){
                 perror("Failed to write user message.");
-                free(message);
+          //      free(message);
                 exit(0);
             }
         }
@@ -318,13 +335,16 @@ sendMessageToUser(pid_t pid, message_t *message) {
     int id, aux;
     char IPCname[NAME_SIZE+1] = {'\0'};
     char userPid[MAX_PID_DIGITS+1] = {'\0'};
+    info_t messageInfo;
     strcpy(IPCname, "r_msg");
     strcat(IPCname, itoa(pid, userPid));
     if((id = getIdentifier(IPCname, O_WRONLY)) < 0){
         perror("fifo open failed");
         exit(0);
     }
-    if((aux = putInfo(id, message, sizeof(message_t), pid*2)) < 0){
+    memcpy(messageInfo.mtext, message, sizeof(message_t));
+    messageInfo.mtype = pid*2;
+    if((aux = putInfo(id, &messageInfo, sizeof(info_t))) < 0){
         perror("Failed to write user message.");
         exit(0);
     }

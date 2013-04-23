@@ -1,5 +1,5 @@
 /*-----FUNCTIONS FOR FIFO'S-----*/
-/*
+
 int
 createIPC(char*fifoName){
 	return mkfifo(fifoName, 0666);
@@ -11,12 +11,12 @@ getIdentifier(char* identifier, int mode){
 }
 
 int
-getInfo(int fd, void *info, int size, long priority){
+getInfo(int fd, info_t *info, int size, long priority){
 	return read(fd, info, size);
 }
 
 int
-putInfo(int fd, void *info, int size, long priority){
+putInfo(int fd, info_t *info, int size){
 	return write(fd, info, size);
 }
 
@@ -32,9 +32,9 @@ removeIPC(void){
     system("rm -rf dsr*");
     system("rm -rf r_msg*");
 }
-*/
-/*----- FUNCTIONS FOR MESSAGE QUEUE'S -----*/
 
+/*----- FUNCTIONS FOR MESSAGE QUEUE'S -----*/
+/*
 int
 createIPC(char* strKey){
 }
@@ -45,20 +45,15 @@ getIdentifier(char* strKey, int mode){
 }
 
 int
-getInfo(int qid, void* info, int size, long priority){
-	msgq_t msg;
+getInfo(int qid, info_t* info, int size, long priority){
 	int aux;
-	aux = msgrcv(qid, &msg, sizeof(msgq_t), priority, MSG_NOERROR);
-	memcpy(info, msg.mtext, size);
+	aux = msgrcv(qid, info, size, priority, MSG_NOERROR);
 	return aux;
 }
 
 int
-putInfo(int qid, void* info, int size, long priority){
-	msgq_t msg;
-	msg.mtype = priority;
-	memcpy(msg.mtext, info, size);
-	return msgsnd(qid, &msg, sizeof(msgq_t), MSG_NOERROR) == 0 ? 1 : -1;
+putInfo(int qid, info_t* info, int size){ 
+	return msgsnd(qid, info, size, MSG_NOERROR) == 0 ? 1 : -1;
 }
 
 void
@@ -68,3 +63,4 @@ endIPC(int fd){
 void
 removeIPC(void){
 }
+*/

@@ -68,7 +68,9 @@ connect(int room) {
             while(getchar() != '\n');
         }
         userName[i] = '\0';
+        printf("%d\n", !isValidUserName(userName, room));
     } while (!isValidUserName(userName, room) || checkUserInServer(userName, room, getpid()));
+    printf("pero aca no\n");
 }
 
 void
@@ -139,7 +141,7 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	int idRead;
 	char roomNumber[MAX_ROOM_DIGITS+1] = {'\0'};
 	boolean hasRead = FALSE;
-	boolean userAvailable;
+	boolean userTaken;
 	
 	char SchatRoom[NAME_SIZE+1] = "SchatRoom";
 	char RchatRoom[NAME_SIZE+1] = "RchatRoom";
@@ -151,46 +153,54 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	char *sIPCname = SchatRoom;
 	char *rIPCname = RchatRoom;
 	char protocol = USER_CONNECTS;
-    
+	info_t protocolInfo;
+	info_t userInfo;
+	info_t confirmationInfo;
+	memcpy(protocolInfo.mtext, &protocol, sizeof(char));
+	protocolInfo.mtext[sizeof(char)] = '\0'; 
+	protocolInfo.mtype = atoi(roomPid);
+	
 	int aux;
 	char result[2];
-	/*-- open read before --*/
+	
 	if((idWrite = getIdentifier(sIPCname, O_WRONLY)) < 0){
 		perror("write fifo open failed");
 	}
-    if(putInfo(idWrite, &protocol, sizeof(char), atoi(roomPid)) < 0){
+    if(putInfo(idWrite, &protocolInfo, sizeof(info_t)) < 0){
 		perror("Write protocol error");
 	}
-    usrData_t *usrData = (usrData_t *)malloc(sizeof(usrData_t));
-    strcpy(usrData->userName, userName);
-    usrData->userPid = pid;
-    usrData->connectionTime = time(0);
-	if(putInfo(idWrite, usrData, sizeof(usrData_t), atoi(roomPid)) < 0){
+    usrData_t usrData;
+    strcpy(usrData.userName, userName);
+    usrData.userPid = pid;
+    usrData.connectionTime = time(0);
+    memcpy(userInfo.mtext, &usrData, sizeof(usrData_t));
+	userInfo.mtype = atoi(roomPid);
+	
+	if(putInfo(idWrite, &userInfo, sizeof(info_t)) < 0){
 		perror("Write user name error");
 	}
-    free(usrData);
 	endIPC(idWrite);
 	while(!hasRead){
 		if((idRead = getIdentifier(rIPCname, O_RDWR)) < 0){
 			perror("read fifo open failed");
 		}
-		if((aux = getInfo(idRead, result, 2, atoi(roomPid))) < 0){
+		if((aux = getInfo(idRead, &confirmationInfo, sizeof(info_t), atoi(roomPid)*3)) < 0){
 			perror("Read failed");
 		}
+		memcpy(result, confirmationInfo.mtext, 2);
 		if(aux > 0){
 			if((strcmp(result, "y")==0)){
-				userAvailable = FALSE;
+				userTaken = FALSE;
 			}
 			else{
                 printf("That user name is in use. Please select another one.\n");
-				userAvailable = TRUE;
+				userTaken = TRUE;
 			}
 			hasRead = TRUE;
 		}
 	}
 	endIPC(idWrite);
-	/*--ending reading user Availble from fifo--*/
-	return userAvailable;
+	return userTaken;
 }
 
 boolean
@@ -227,6 +237,7 @@ waitForMessages(void) {
     char rmsg[NAME_SIZE+1] = "r_msg";
     int id, aux;
     char roomAux[MAX_PID_DIGITS+1] = {'\0'};
+    info_t messageInfo;
     
     strcat(rmsg, itoa(getpid(), roomAux));
     if(createIPC(rmsg) == -1){
@@ -240,10 +251,11 @@ waitForMessages(void) {
 	}
     while (TRUE) {
         message_t *message = (message_t *)malloc(sizeof(message_t));
-        if((aux = getInfo(id, message, sizeof(message_t), clientPid*2)) < 0){
+        if((aux = getInfo(id, &messageInfo, sizeof(info_t), clientPid*2)) < 0){
             perror("Failed to read user name");
             exit(0);
         } else {
+			memcpy(message, messageInfo.mtext, sizeof(message_t));
             printf("%s says: %s\n", message->userName, message->msg);
         }
         free(message);
