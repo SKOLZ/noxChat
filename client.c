@@ -129,8 +129,8 @@ askRoomNumber(int rooms, pid_t* pids) {
         roomNumber[MAX_ROOM_DIGITS] = '\0';
 		room = atoi(roomNumber);
 		strcpy(roomPid, itoa(pids[room-1], roomAux));
-		free(pids);
 	}while (!isValidRoomNumber(roomNumber, rooms));
+    free(pids);
     connect(room);
 	welcome(room);
 }
@@ -200,6 +200,7 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 		}
 	}
 	endIPC(idWrite);
+	printf("vero traba\n");
 	return userTaken;
 }
 

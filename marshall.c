@@ -1,5 +1,5 @@
 /*-----FUNCTIONS FOR FIFO'S-----*/
-
+/*
 int
 createIPC(char*fifoName){
 	return mkfifo(fifoName, 0666);
@@ -32,9 +32,9 @@ removeIPC(void){
     system("rm -rf dsr*");
     system("rm -rf r_msg*");
 }
-
+*/
 /*----- FUNCTIONS FOR MESSAGE QUEUE'S -----*/
-/*
+
 int
 createIPC(char* strKey){
 }
@@ -47,13 +47,13 @@ getIdentifier(char* strKey, int mode){
 int
 getInfo(int qid, info_t* info, int size, long priority){
 	int aux;
-	aux = msgrcv(qid, info, size, priority, MSG_NOERROR);
+	aux = msgrcv(qid, info, MAX_BYTE_LENGTH, priority, MSG_NOERROR);
 	return aux;
 }
 
 int
 putInfo(int qid, info_t* info, int size){ 
-	return msgsnd(qid, info, size, MSG_NOERROR) == 0 ? 1 : -1;
+	return msgsnd(qid, info, MAX_BYTE_LENGTH, MSG_NOERROR) == 0 ? 1 : -1;
 }
 
 void
@@ -63,4 +63,4 @@ endIPC(int fd){
 void
 removeIPC(void){
 }
-*/
+

@@ -136,7 +136,7 @@ welcomeUsers(char *reader, char *writer){
                     }
                 } else {
 					memcpy(confirmationInfo.mtext, "n", 2);
-                    confirmationInfo.mtype = roomPid;
+                    confirmationInfo.mtype = roomPid*3;
 					if(putInfo(writerID, &confirmationInfo, sizeof(info_t)) == -1){
 						perror("Writing name Available failed");
                     }
