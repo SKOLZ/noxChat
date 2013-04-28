@@ -33,11 +33,11 @@ main(int argc, char **argv) {
 	strcat(RchatRoom, itoa(roomNumber+1, roomAux));
 	
     if(createIPC(SchatRoom) == -1){
-		perror("creating fifo write error");
+		perror("creating IPC write error");
         exit(0);
     }
     if(createIPC(RchatRoom) == -1){
-		perror("creating fifo read error");
+		perror("creating IPC read error");
         exit(0);
     }
 	welcomeUsers(SchatRoom, RchatRoom);
@@ -73,9 +73,8 @@ welcomeUsers(char *reader, char *writer){
 	int readerID, writerID, aux1, aux2;
     char protocol;
     info_t confirmationInfo;
-	/*--begining reading user name--*/
-	if((readerID = getIdentifier(reader, O_RDWR)) < 0){
-		perror("Fifo open failed");
+	if((readerID = getIdentifier(reader, O_RDWR)) == -1){
+		perror("IPC open failed");
         exit(0);
     }
     SchatRoomID = readerID;
@@ -107,8 +106,8 @@ welcomeUsers(char *reader, char *writer){
 			}
 			memcpy(usrData, userInfo.mtext, sizeof(usrData_t));
             if(aux1 > 0 && aux2 > 0) {
-                if((writerID = getIdentifier(writer, O_WRONLY)) < 0){
-					perror("Fifo open failed");
+                if((writerID = getIdentifier(writer, O_WRONLY)) == -1){
+					perror("IPC open failed");
 					exit(0);
 				}
                 if(uniqueUser(usrData->userName)) {
@@ -119,7 +118,6 @@ welcomeUsers(char *reader, char *writer){
 					if(putInfo(writerID, &confirmationInfo, sizeof(info_t)) == -1){
 						perror("Writing name Available failed");
                     }
-                    /*-- creatin dedicated server for user--*/
                     switch(fork()){
                         case -1: {
                             perror("Failed to fork");
@@ -142,7 +140,6 @@ welcomeUsers(char *reader, char *writer){
                     }
                 }
                 endIPC(writerID);
-                /*ending writing user available--*/
                 
             }
         }
@@ -285,33 +282,28 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
 	printf("\nDedicated server with pid %d has been created for user %s (%d)\n",\
            dsPid, userName, userPid);
 	if(createIPC(ds) == -1){
-		perror("creating fifo read error");
+		perror("creating IPC read error");
         exit(0);
     }
     int ID, aux;
-    if((ID = getIdentifier(ds, O_RDWR)) < 0){
-		perror("Fifo open failed");
+    if((ID = getIdentifier(ds, O_RDWR)) == -1){
+		perror("IPC open failed");
         exit(0);
     }
-    //message_t *message = (message_t *)malloc(sizeof(message_t));
     while (TRUE) {
         if((aux = getInfo(ID, &messageInfo, sizeof(info_t), userPid)) < 0){
             perror("Failed to read user name.");
-      //      free(message);
             exit(0);
         } else if (aux > 0) {
 			memcpy(protocolInfo.mtext, &protocol, 1);
             protocolInfo.mtype = roomPid;
             if((aux = putInfo(SchatRoomID, &protocolInfo, sizeof(info_t))) < 0){
                 perror("Failed to write protocol.");
-        //        free(message);
                 exit(0);
             }
-            //memcpy(messageInfo.mtext, message, sizeof(message_t);
             messageInfo.mtype = roomPid;
             if((aux = putInfo(SchatRoomID, &messageInfo, sizeof(info_t))) < 0){
                 perror("Failed to write user message.");
-          //      free(message);
                 exit(0);
             }
         }
@@ -338,8 +330,8 @@ sendMessageToUser(pid_t pid, message_t *message) {
     info_t messageInfo;
     strcpy(IPCname, "r_msg");
     strcat(IPCname, itoa(pid, userPid));
-    if((id = getIdentifier(IPCname, O_WRONLY)) < 0){
-        perror("fifo open failed");
+    if((id = getIdentifier(IPCname, O_WRONLY)) == -1){
+        perror("IPC open failed");
         exit(0);
     }
     memcpy(messageInfo.mtext, message, sizeof(message_t));

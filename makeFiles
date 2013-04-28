@@ -1,0 +1,6 @@
+noxChat: client.c server.c prompt.c chatroom.c files.c grlfun.c
+	clear
+	gcc -o client client.c files.c grlfun.c
+	gcc -o server server.c files.c grlfun.c
+	gcc -o chatroom chatroom.c files.c grlfun.c
+	gcc -o prompt prompt.c  files.c grlfun.c

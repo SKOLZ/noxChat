@@ -51,10 +51,9 @@ sendMessage(void) {
 	strcpy(ds, "dsr");
     strcat(ds, userPid);
 
-	/*--creating fifos--*/
     int id, aux;
-    if((id = getIdentifier(ds, O_RDWR)) < 0){
-		perror("fifo open failed");
+    if((id = getIdentifier(ds, O_RDWR)) == -1){
+		perror("IPC open failed");
         exit(0);
 	}
     

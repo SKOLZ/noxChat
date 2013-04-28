@@ -2,7 +2,7 @@
 
 #ifndef CLIENT_H
 #define CLIENT_H
-    void connect();
+    void chooseUserName();
 	boolean validateUserName(char *userName, int room);
     boolean isNumber(char *s);
     void welcome(int opt);

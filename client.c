@@ -50,7 +50,7 @@ isNumber(char *s) {
 }
 
 void
-connect(int room) {
+chooseUserName(int room) {
     int i;
 	char c;
     boolean flag;
@@ -68,9 +68,7 @@ connect(int room) {
             while(getchar() != '\n');
         }
         userName[i] = '\0';
-        printf("%d\n", !isValidUserName(userName, room));
     } while (!isValidUserName(userName, room) || checkUserInServer(userName, room, getpid()));
-    printf("pero aca no\n");
 }
 
 void
@@ -131,7 +129,7 @@ askRoomNumber(int rooms, pid_t* pids) {
 		strcpy(roomPid, itoa(pids[room-1], roomAux));
 	}while (!isValidRoomNumber(roomNumber, rooms));
     free(pids);
-    connect(room);
+    chooseUserName(room);
 	welcome(room);
 }
 
@@ -163,8 +161,8 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	int aux;
 	char result[2];
 	
-	if((idWrite = getIdentifier(sIPCname, O_WRONLY)) < 0){
-		perror("write fifo open failed");
+	if((idWrite = getIdentifier(sIPCname, O_WRONLY)) == -1){
+		perror("write IPC open failed");
 	}
     if(putInfo(idWrite, &protocolInfo, sizeof(info_t)) < 0){
 		perror("Write protocol error");
@@ -181,8 +179,8 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	}
 	endIPC(idWrite);
 	while(!hasRead){
-		if((idRead = getIdentifier(rIPCname, O_RDWR)) < 0){
-			perror("read fifo open failed");
+		if((idRead = getIdentifier(rIPCname, O_RDWR)) == -1 ){
+			perror("read IPC open failed");
 		}
 		if((aux = getInfo(idRead, &confirmationInfo, sizeof(info_t), atoi(roomPid)*3)) < 0){
 			perror("Read failed");
@@ -200,7 +198,6 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 		}
 	}
 	endIPC(idWrite);
-	printf("vero traba\n");
 	return userTaken;
 }
 
@@ -242,12 +239,11 @@ waitForMessages(void) {
     
     strcat(rmsg, itoa(getpid(), roomAux));
     if(createIPC(rmsg) == -1){
-		perror("Creating rmsg fifo error");
+		perror("Creating rmsg IPC error");
         exit(0);
 	}
-	/*--creating fifos--*/
-    if((id = getIdentifier(rmsg, O_RDWR)) < 0) {
-		perror("rmsg fifo open failed");
+    if((id = getIdentifier(rmsg, O_RDWR)) == -1) {
+		perror("rmsg IPC open failed");
         exit(0);
 	}
     while (TRUE) {

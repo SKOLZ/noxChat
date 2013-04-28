@@ -25,7 +25,7 @@
     #define COMMAND_COST "/cost"
     #define COMMAND_USERS "/users"
     #define QUEUE_KEY (key_t)0100
-        
+    typedef int boolean;       
     #include "grlfun.h"
     #include "marshall.h"
     
@@ -41,7 +41,7 @@
         char userName[NAME_SIZE+1];
     }message_t;
 
-    typedef int boolean;
+
 
     void saveData(void);
     void freeUserList(void);
@@ -52,7 +52,7 @@
     void createFifo(char *fifoName);
     void chatRoom(int serverNumber, int processID);
     void showRooms(void);
-    void shutdown(int status);
+    void shutdownServer(int status);
     void welcomeUsers( char *fifoRead, char *fifoWrite);
     void listenToUser(char *userName, pid_t userPid, pid_t dsPid);
     void addToUserList(usrData_t *usrData);
@@ -60,4 +60,7 @@
     void checkCommand(char *command);
     void broadcast(message_t *message);
     void showUsers(void);
-#endif
+    
+#endif    
+    
+    

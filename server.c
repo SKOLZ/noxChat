@@ -63,13 +63,13 @@ main(int argc, char **argv) {
 void
 checkCommand(char *command) {
     if(!strcmp(command, "/quit")) {
-        shutdown(0);
+        shutdownServer(0);
     }
 }
 
 void catchint(int signo) {
     printf("FATAL: Server execution has been terminated suddenly\n");
-    shutdown(0);
+    shutdownServer(0);
 }
 
 void
@@ -80,18 +80,18 @@ saveData(void) {
 	if((fd = open("server.cfg", O_RDWR | O_CREAT | O_TRUNC, 0666)) < 0)\
 	{
 		perror("Failed to open server.cfg");
-		shutdown(3);
+		shutdownServer(3);
 	}
 	int wr;
 	if((wr = write(fd, &rooms, sizeof(int))) < 0) {
 		perror("Failed to write byte info on server.cfg");
 		close(fd);
-		shutdown(4);
+		shutdownServer(4);
 	}
 	if((wr = write(fd, pids, rooms*sizeof(pid_t))) < 0) {
 		perror("Failed to write pids on server.cfg");
 		close(fd);
-		shutdown(5);
+		shutdownServer(5);
 	}
 }
 
@@ -112,7 +112,7 @@ showRooms(void) {
 }
 
 void
-shutdown(int status) {
+shutdownServer(int status) {
 	int i;
 	char roomAux[MAX_ROOM_DIGITS+1] = {'\0'};
 	char SchatRoom[NAME_SIZE+1] = {'\0'};
