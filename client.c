@@ -135,8 +135,7 @@ askRoomNumber(int rooms, pid_t* pids) {
 
 boolean
 checkUserInServer(char *userName, int room, pid_t pid) {
-	int idWrite;
-	int idRead;
+    identifier_t idWrite, idRead;
 	char roomNumber[MAX_ROOM_DIGITS+1] = {'\0'};
 	boolean hasRead = FALSE;
 	boolean userTaken;
@@ -160,8 +159,8 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	
 	int aux;
 	char result[2];
-	
-	if((idWrite = getIdentifier(sIPCname, O_WRONLY)) == -1){
+	idWrite = getIdentifier(sIPCname, O_WRONLY);
+	if(idWrite.fd == -1){
 		perror("write IPC open failed");
 	}
     if(putInfo(idWrite, &protocolInfo, sizeof(info_t)) < 0){
@@ -179,7 +178,8 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	}
 	endIPC(idWrite);
 	while(!hasRead){
-		if((idRead = getIdentifier(rIPCname, O_RDWR)) == -1 ){
+        idRead = getIdentifier(rIPCname, O_RDWR);
+		if(idRead.fd == -1 ){
 			perror("read IPC open failed");
 		}
 		if((aux = getInfo(idRead, &confirmationInfo, sizeof(info_t), atoi(roomPid)*3)) < 0){
@@ -233,7 +233,8 @@ welcome(int opt) {
 void
 waitForMessages(void) {
     char rmsg[NAME_SIZE+1] = "r_msg";
-    int id, aux;
+    int aux;
+    identifier_t id;
     char roomAux[MAX_PID_DIGITS+1] = {'\0'};
     info_t messageInfo;
     
@@ -242,7 +243,8 @@ waitForMessages(void) {
 		perror("Creating rmsg IPC error");
         exit(0);
 	}
-    if((id = getIdentifier(rmsg, O_RDWR)) == -1) {
+    id = getIdentifier(rmsg, O_RDWR);
+    if(id.fd == -1) {
 		perror("rmsg IPC open failed");
         exit(0);
 	}

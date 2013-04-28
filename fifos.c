@@ -1,27 +1,31 @@
 #include "server.h"
+
 int
 createIPC(char*fifoName){
-	return mkfifo(fifoName, 0666);
+    return mkfifo(fifoName, 0666);
+}
+
+identifier_t
+getIdentifier(char* id, int mode){
+    identifier_t ans;
+    ans.fd = open(id, mode);
+    strcpy(ans.address, id);
+    return ans;
 }
 
 int
-getIdentifier(char* identifier, int mode){
-	return open(identifier, mode);
+getInfo(identifier_t id, info_t *info, int size, long priority){
+	return read(id.fd, info, size);
 }
 
 int
-getInfo(int fd, info_t *info, int size, long priority){
-	return read(fd, info, size);
-}
-
-int
-putInfo(int fd, info_t *info, int size){
-	return write(fd, info, size);
+putInfo(identifier_t id, info_t *info, int size){
+	return write(id.fd, info, size);
 }
 
 void
-endIPC(int fd){
-	close(fd);
+endIPC(identifier_t id){
+	close(id.fd);
 }
 
 void

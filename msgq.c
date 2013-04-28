@@ -3,25 +3,28 @@ int
 createIPC(char* strKey){
 }
 
-int
+identifier_t
 getIdentifier(char* strKey, int mode){
-	return msgget(QUEUE_KEY, 0666 | IPC_CREAT);
+    identifier_t ans;
+    ans.fd = msgget(QUEUE_KEY, 0666 | IPC_CREAT);
+    strcpy(ans.address, strKey);
+	return ans;
 }
 
 int
-getInfo(int qid, info_t* info, int size, long priority){
+getInfo(identifier_t id, info_t* info, int size, long priority){
 	int aux;
-	aux = msgrcv(qid, info, MAX_BYTE_LENGTH, priority, MSG_NOERROR);
+	aux = msgrcv(id.fd, info, MAX_BYTE_LENGTH, priority, MSG_NOERROR);
 	return aux;
 }
 
 int
-putInfo(int qid, info_t* info, int size){ 
-	return msgsnd(qid, info, MAX_BYTE_LENGTH, MSG_NOERROR) == 0 ? 1 : -1;
+putInfo(identifier_t id, info_t* info, int size){ 
+	return msgsnd(id.fd, info, MAX_BYTE_LENGTH, MSG_NOERROR) == 0 ? 1 : -1;
 }
 
 void
-endIPC(int fd){
+endIPC(identifier_t id){
 }
 
 void

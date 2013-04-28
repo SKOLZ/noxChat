@@ -65,8 +65,10 @@ int
 createIPC(char* strKey){
 }
 
-int
+identifier_t
 getIdentifier(char* strKey, int mode){
+    identifier_t ans;
+    strcpy(ans.address, strKey);
 	void* mem;
 	int memid;
 	int key;
@@ -79,21 +81,22 @@ getIdentifier(char* strKey, int mode){
 		perror("shmat");
 		exit(1);
 	}
+    ans.fd = (int)mem;
 	memset(mem, 0, sizeof(info_t));
-	return (int)mem;
+	return ans;
 }	
 
 int
-getInfo(int addr, info_t* info, int size, long priority){
+getInfo(identifier_t id, info_t* info, int size, long priority){
 	int semid;
 	boolean correct = FALSE;
 	
 	semid = initmutex(priority);
 	while(!correct){
 		enter(semid);
-		memcpy(info, (void*)addr, sizeof(info_t));
+		memcpy(info, (void*)id.fd, sizeof(info_t));
 		if(info->mtype == priority){
-			memset((void*)addr, 0, sizeof(info_t));
+			memset((void*)id.fd, 0, sizeof(info_t));
 			correct = TRUE;
 		}
 		leave(semid);
@@ -104,19 +107,19 @@ getInfo(int addr, info_t* info, int size, long priority){
 }
 
 int
-putInfo(int mem, info_t* info, int size){ 
+putInfo(identifier_t id, info_t* info, int size){ 
 	int semid;
 	semid = initmutex(info->mtype);
 	enter(semid);
-	memcpy((void*)mem, info, sizeof(info_t));
+	memcpy((void*)id.fd, info, sizeof(info_t));
 	leave(semid);
 	usleep(2000);
 	return 1;
 }
 
 void
-endIPC(int mem){	
-	shmdt((void*)mem);
+endIPC(identifier_t id){	
+	shmdt((void*)id.fd);
 }
 
 void

@@ -40,13 +40,16 @@ int
 createIPC(char* strKey){
 }
 
-int
+identifier_t
 getIdentifier(char* path, int mode){
-	return open(path, mode | O_CREAT, 0666);
+    identifier_t ans;
+    ans.fd = open(path, mode | O_CREAT, 0666);
+    ans.address = id;
+	return ans;
 }
 
 int
-getInfo(int fd, info_t* info, int size, long priority){
+getInfo(identifier_t id, info_t* info, int size, long priority){
 	int aux;
 	int semid;
 	boolean correct = FALSE;
@@ -57,13 +60,13 @@ getInfo(int fd, info_t* info, int size, long priority){
 		//enter(semid);
 		info_t trash;
 		
-		aux = read(fd, info, sizeof(info_t));
+		aux = read(id.fd, info, sizeof(info_t));
 		if(info->mtype == priority){
 			correct = TRUE;
-			lseek(fd, 0, SEEK_SET);
-			write(fd, &info, sizeof(info_t));
+			lseek(id.fd, 0, SEEK_SET);
+			write(id.fd, &info, sizeof(info_t));
 		}
-		lseek(fd, 0, SEEK_SET);
+		lseek(id.fd, 0, SEEK_SET);
 		//leave(semid);
 		usleep(2000);
 	}
@@ -71,21 +74,21 @@ getInfo(int fd, info_t* info, int size, long priority){
 }
 
 int
-putInfo(int fd, info_t* info, int size){ 
+putInfo(identifier_t id, info_t* info, int size){ 
 	int semid;
 	int aux;
 	
 	//semid = initmutex(info->mtype);
 	//enter(semid);
-	aux = write(fd, info, sizeof(info_t));
+	aux = write(id.fd, info, sizeof(info_t));
 	//leave(semid);
 	usleep(2000);
 	return aux; 
 }
 
 void
-endIPC(int fd){
-	close(fd);
+endIPC(identifier_t id){
+	close(id.fd);
 }
 
 void

@@ -15,11 +15,16 @@ typedef struct info{
 	byte mtext[MAX_BYTE_LENGTH];
 }info_t;
 
+typedef struct identifier {
+    int fd;
+    char address[32];
+} identifier_t;
+
 int createIPC(char*fifoName);
-int getIdentifier(char* identifier, int mode);
-int getInfo(int fd, info_t *info, int size, long priority);
-int putInfo(int fd, info_t *info, int size);
-void endIPC(int fd);
+identifier_t getIdentifier(char* identifier, int mode);
+int getInfo(identifier_t i, info_t *info, int size, long priority);
+int putInfo(identifier_t i, info_t *info, int size);
+void endIPC(identifier_t i);
 void removeIPC(void);
 
 #endif

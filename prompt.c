@@ -47,12 +47,15 @@ void
 sendMessage(void) {
     char ds[NAME_SIZE+1] = {'\0'};
     boolean hasRead = FALSE;
+    int aux;
+    identifier_t id;
+    
     info_t messageInfo;
 	strcpy(ds, "dsr");
     strcat(ds, userPid);
 
-    int id, aux;
-    if((id = getIdentifier(ds, O_RDWR)) == -1){
+    id = getIdentifier(ds, O_RDWR);
+    if(id.fd == -1){
 		perror("IPC open failed");
         exit(0);
 	}

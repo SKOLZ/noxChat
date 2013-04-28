@@ -4,7 +4,7 @@ int roomNumber;
 int roomPid;
 int clientNumber;
 usrData_t *users;
-int SchatRoomID;
+identifier_t SchatRoomID;
 int clientsInRoom;
 
 int
@@ -70,10 +70,12 @@ freeUserList(void) {
 
 void
 welcomeUsers(char *reader, char *writer){
-	int readerID, writerID, aux1, aux2;
+	int aux1, aux2;
+    identifier_t readerID, writerID;
     char protocol;
     info_t confirmationInfo;
-	if((readerID = getIdentifier(reader, O_RDWR)) == -1){
+    readerID = getIdentifier(reader, O_RDWR);
+	if(readerID.fd == -1){
 		perror("IPC open failed");
         exit(0);
     }
@@ -105,8 +107,10 @@ welcomeUsers(char *reader, char *writer){
 				exit(0);
 			}
 			memcpy(usrData, userInfo.mtext, sizeof(usrData_t));
+            usrData->next = NULL;
             if(aux1 > 0 && aux2 > 0) {
-                if((writerID = getIdentifier(writer, O_WRONLY)) == -1){
+                writerID = getIdentifier(writer, O_WRONLY);
+                if(writerID.fd == -1){
 					perror("IPC open failed");
 					exit(0);
 				}
@@ -142,6 +146,9 @@ welcomeUsers(char *reader, char *writer){
                 endIPC(writerID);
                 
             }
+        } else {
+            perror("Protocol error\n");
+            exit(1);
         }
     }
 }
@@ -222,6 +229,7 @@ addToUserList(usrData_t *usrData) {
     message_t *serverMessage = (message_t *)malloc(sizeof(message_t));
     
     if (users == NULL) {
+        printf("CASO 1\n");
         users = usrData;
     } else {
         usrData_t *curr = users;
@@ -230,6 +238,7 @@ addToUserList(usrData_t *usrData) {
         }
         curr->next = usrData;
     }
+    printf("pase add..\n");
     strcpy(serverMessage->msg, "Hello! I've joined your chat room!");
     strcpy(serverMessage->userName, usrData->userName);
     broadcast(serverMessage);
@@ -273,6 +282,8 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
     char ds[NAME_SIZE+1] = {'\0'};
     char roomAux[MAX_PID_DIGITS+1] = {'\0'};
     char protocol = USER_MESSAGE;
+    int aux;
+    identifier_t ID;
     boolean hasRead = FALSE;
     info_t protocolInfo;
     info_t messageInfo;
@@ -285,8 +296,8 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
 		perror("creating IPC read error");
         exit(0);
     }
-    int ID, aux;
-    if((ID = getIdentifier(ds, O_RDWR)) == -1){
+    ID = getIdentifier(ds, O_RDWR);
+    if(ID.fd == -1){
 		perror("IPC open failed");
         exit(0);
     }
@@ -324,13 +335,15 @@ broadcast(message_t *message) {
 
 void
 sendMessageToUser(pid_t pid, message_t *message) {
-    int id, aux;
+    int aux;
+    identifier_t id;
     char IPCname[NAME_SIZE+1] = {'\0'};
     char userPid[MAX_PID_DIGITS+1] = {'\0'};
     info_t messageInfo;
     strcpy(IPCname, "r_msg");
     strcat(IPCname, itoa(pid, userPid));
-    if((id = getIdentifier(IPCname, O_WRONLY)) == -1){
+    id = getIdentifier(IPCname, O_WRONLY);
+    if(id.fd == -1){
         perror("IPC open failed");
         exit(0);
     }
