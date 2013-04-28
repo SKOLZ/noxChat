@@ -27,6 +27,7 @@ getIdentifier(char* strKey, int mode){
 
 int
 getInfo(identifier_t id, info_t* info, int size, long priority) {
+    printf("id.fd = %d\n", id.fd);
     if (recv(id.fd, info, size, 0) == -1) {
         perror("recv call failed");
         exit(1);
