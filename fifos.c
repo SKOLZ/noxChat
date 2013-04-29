@@ -6,7 +6,7 @@ createIPC(char*fifoName){
 }
 
 identifier_t
-getIdentifier(char* id, int mode){
+getIdentifier(char* id, int mode, int unuse){
     identifier_t ans;
     ans.fd = open(id, mode);
     strcpy(ans.address, id);

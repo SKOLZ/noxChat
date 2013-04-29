@@ -13,12 +13,27 @@ main(int argc, char **argv) {
         printf("\nInvalid amount of arguments\n");
         exit(1);
     }
+    
+    static struct sigaction act;
+    void catchint(int);
+    
+    act.sa_handler = catchint;
+    sigfillset(&(act.sa_mask));
+    
+    sigaction(SIGINT, &act, NULL);
+    
     strcpy(userName, argv[0]);
     strcpy(userPid, argv[1]);
     strcpy(roomNumber, argv[2]);
     strcpy(roomPid, argv[3]);
     startPrompt();
     exit(0);
+}
+
+void
+catchint(int i) {
+    strcpy(message, "/quit");
+    sendMessage();
 }
 
 void
@@ -47,14 +62,18 @@ void
 sendMessage(void) {
     char ds[NAME_SIZE+1] = {'\0'};
     boolean hasRead = FALSE;
-    int aux;
+    int aux, ids;
     identifier_t id;
     
     info_t messageInfo;
+    
 	strcpy(ds, "dsr");
     strcat(ds, userPid);
-
-    id = getIdentifier(ds, O_RDWR);
+    
+    ids = createIPC(ds);
+    
+    
+    id = getIdentifier(ds, O_RDWR, ids);
     if(id.fd == -1){
 		perror("IPC open failed");
         exit(0);
@@ -70,4 +89,7 @@ sendMessage(void) {
         exit(0);
     }
     free(msg);
+    if (strcmp(message, "/quit") == 0) {
+        exit(0);
+    }
 }

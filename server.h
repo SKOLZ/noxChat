@@ -48,20 +48,20 @@
 
     void saveData(void);
     void freeUserList(void);
-    boolean isCommand(message_t *message);
+    boolean isCommand(message_t message);
     pid_t getUserPid(char *userName);
     time_t getConnectionTime(char *userName);
-    void sendMessageToUser(pid_t pid, message_t *message);
+    void sendMessageToUser(pid_t pid, message_t message);
     void createFifo(char *fifoName);
     void chatRoom(int serverNumber, int processID);
     void showRooms(void);
     void shutdownServer(int status);
-    void welcomeUsers( char *fifoRead, char *fifoWrite);
+    void welcomeUsers(char *reader, char *writer, int idr, int idw);
     void listenToUser(char *userName, pid_t userPid, pid_t dsPid);
     void addToUserList(usrData_t *usrData);
     void removeFromUserList(char *userName);
     void checkCommand(char *command);
-    void broadcast(message_t *message);
+    void broadcast(message_t message);
     void showUsers(void);
     
 #endif    

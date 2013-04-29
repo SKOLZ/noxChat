@@ -21,7 +21,7 @@ typedef struct identifier {
 } identifier_t;
 
 int createIPC(char*fifoName);
-identifier_t getIdentifier(char* identifier, int mode);
+identifier_t getIdentifier(char* identifier, int mode, int id);
 int getInfo(identifier_t i, info_t *info, int size, long priority);
 int putInfo(identifier_t i, info_t *info, int size);
 void endIPC(identifier_t i);

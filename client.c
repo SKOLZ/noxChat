@@ -157,9 +157,10 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	protocolInfo.mtext[sizeof(char)] = '\0'; 
 	protocolInfo.mtype = atoi(roomPid);
 	
-	int aux;
+	int aux, id;
 	char result[2];
-	idWrite = getIdentifier(sIPCname, O_WRONLY);
+    id = createIPC("ipc");
+	idWrite = getIdentifier(sIPCname, O_WRONLY, id);
 	if(idWrite.fd == -1){
 		perror("write IPC open failed");
 	}
@@ -176,9 +177,8 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	if(putInfo(idWrite, &userInfo, sizeof(info_t)) < 0){
 		perror("Write user name error");
 	}
-	endIPC(idWrite);
 	while(!hasRead){
-        idRead = getIdentifier(rIPCname, O_RDWR);
+        idRead = getIdentifier(rIPCname, O_RDWR, id);
 		if(idRead.fd == -1 ){
 			perror("read IPC open failed");
 		}
@@ -239,25 +239,27 @@ waitForMessages(void) {
     info_t messageInfo;
     
     strcat(rmsg, itoa(getpid(), roomAux));
-    if(createIPC(rmsg) == -1){
+    if((id.fd = createIPC(rmsg)) == -1){
 		perror("Creating rmsg IPC error");
         exit(0);
 	}
-    id = getIdentifier(rmsg, O_RDWR);
+    id = getIdentifier(rmsg, O_RDWR, id.fd);
     if(id.fd == -1) {
 		perror("rmsg IPC open failed");
         exit(0);
 	}
     while (TRUE) {
-        message_t *message = (message_t *)malloc(sizeof(message_t));
+        message_t message;
         if((aux = getInfo(id, &messageInfo, sizeof(info_t), clientPid*2)) < 0){
             perror("Failed to read user name");
             exit(0);
         } else {
-			memcpy(message, messageInfo.mtext, sizeof(message_t));
-            printf("%s says: %s\n", message->userName, message->msg);
+			memcpy(&message, messageInfo.mtext, sizeof(message_t));
+            printf("%s says: %s\n", message.userName, message.msg);
+            if (strcmp(message.msg, "You have left the chat room...") == 0) {
+                exit(0);
+            }
         }
-        free(message);
     }
 }
 

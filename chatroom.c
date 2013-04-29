@@ -32,28 +32,29 @@ main(int argc, char **argv) {
 	strcat(SchatRoom, itoa(roomNumber+1, roomAux));
 	strcat(RchatRoom, itoa(roomNumber+1, roomAux));
 	
-    if(createIPC(SchatRoom) == -1){
+    int scr, rcr;
+    
+    if((scr = createIPC(SchatRoom)) == -1){
 		perror("creating IPC write error");
         exit(0);
     }
-    if(createIPC(RchatRoom) == -1){
+    if((rcr = createIPC(RchatRoom)) == -1){
 		perror("creating IPC read error");
         exit(0);
     }
-	welcomeUsers(SchatRoom, RchatRoom);
+	welcomeUsers(SchatRoom, RchatRoom, scr, rcr);
 }
 
 void
 catchint(int signo) {
-    message_t *serverMessage = (message_t *)malloc(sizeof(message_t));
-    strcpy(serverMessage->userName, "DEDICATED SERVER");
+    message_t serverMessage;
+    strcpy(serverMessage.userName, "DEDICATED SERVER");
     char msg[MESSAGE_SIZE+1] = "Server execution has been terminated suddenly. Please try connecting again later...\nERROR CODE: ";
     char aux[6] = {'\0'};
     strcat(msg, itoa(signo, aux));
-    strcpy(serverMessage->msg, msg);
+    strcpy(serverMessage.msg, msg);
     broadcast(serverMessage);
     freeUserList();
-    free(serverMessage);
 }
 
 void
@@ -69,13 +70,13 @@ freeUserList(void) {
 }
 
 void
-welcomeUsers(char *reader, char *writer){
+welcomeUsers(char *reader, char *writer, int idr, int idw){
 	int aux1, aux2;
     identifier_t readerID, writerID;
     char protocol;
     info_t confirmationInfo;
-    readerID = getIdentifier(reader, O_RDWR);
-	if(readerID.fd == -1){
+    readerID = getIdentifier(reader, O_RDWR, idr);
+	if(readerID.fd == -1) {
 		perror("IPC open failed");
         exit(0);
     }
@@ -89,16 +90,15 @@ welcomeUsers(char *reader, char *writer){
 		memcpy(&protocol, protocolInfo.mtext, sizeof(char));
         if(protocol == USER_MESSAGE) {
 			info_t messageInfo;
-            message_t *message = (message_t *)malloc(sizeof(message_t));
+            message_t message;
             if((aux1 = getInfo(readerID, &messageInfo, sizeof(info_t), roomPid)) < 0){
 				perror("Failed to read protocol.");
 				exit(0);
 			}
-			memcpy(message, &messageInfo.mtext, sizeof(message_t));
+			memcpy(&message, &messageInfo.mtext, sizeof(message_t));
             if (!isCommand(message)) {
                 broadcast(message);
             }
-            free(message);
         } else if(protocol == USER_CONNECTS) {
 			info_t userInfo;
             usrData_t *usrData = (usrData_t *)malloc(sizeof(usrData_t));
@@ -109,7 +109,9 @@ welcomeUsers(char *reader, char *writer){
 			memcpy(usrData, userInfo.mtext, sizeof(usrData_t));
             usrData->next = NULL;
             if(aux1 > 0 && aux2 > 0) {
-                writerID = getIdentifier(writer, O_WRONLY);
+                /*int ids = createIPC("server");
+                identifier_t idsi = getIdentifier("ipc", O_WRONLY, ids);*/
+                writerID = getIdentifier(writer, O_WRONLY, idw);
                 if(writerID.fd == -1){
 					perror("IPC open failed");
 					exit(0);
@@ -119,10 +121,10 @@ welcomeUsers(char *reader, char *writer){
                     printf("\nSERVER MESSAGE: User \"%s\" has joined room number %d - User PID = %d\n", usrData->userName, roomNumber+1, usrData->userPid);
                     memcpy(confirmationInfo.mtext, "y", 2);
                     confirmationInfo.mtype = roomPid*3;
-					if(putInfo(writerID, &confirmationInfo, sizeof(info_t)) == -1){
+                    if(putInfo(writerID, &confirmationInfo, sizeof(info_t)) == -1){
 						perror("Writing name Available failed");
                     }
-                    switch(fork()){
+                    switch(fork()) {
                         case -1: {
                             perror("Failed to fork");
                             exit(2);
@@ -144,7 +146,6 @@ welcomeUsers(char *reader, char *writer){
                     }
                 }
                 endIPC(writerID);
-                
             }
         } else {
             perror("Protocol error\n");
@@ -154,47 +155,46 @@ welcomeUsers(char *reader, char *writer){
 }
 
 boolean
-isCommand(message_t *message) {
-    if (!strcmp(message->msg, COMMAND_COST)) {
-        message_t *serverMessage = (message_t *)malloc(sizeof(message_t));
-        strcpy(serverMessage->userName, "DEDICATED SERVER");
+isCommand(message_t message) {
+    if (!strcmp(message.msg, COMMAND_COST)) {
+        message_t serverMessage;
+        strcpy(serverMessage.userName, "DEDICATED SERVER");
         char msg[MESSAGE_SIZE+1] = "Current cost is ";
         char aux[10] = {'\0'};
-        strcat(msg, itoa(((time(0)-getConnectionTime(message->userName))/60)*PRICE, aux));
-        strcpy(serverMessage->msg, msg);
-        sendMessageToUser(getUserPid(message->userName), serverMessage);
-        free(serverMessage);
+        strcat(msg, itoa(((time(0)-getConnectionTime(message.userName))/60)*PRICE, aux));
+        strcpy(serverMessage.msg, msg);
+        sendMessageToUser(getUserPid(message.userName), serverMessage);
         return TRUE;
-    } else if(!strcmp(message->msg, COMMAND_QUIT)) {
-        message_t *serverMessage = (message_t *)malloc(sizeof(message_t));
-        strcpy(serverMessage->userName, "DEDICATED SERVER");
-        strcpy(serverMessage->msg, "You have left the chat room. Press ctrl. + C to terminate program...");
-        sendMessageToUser(getUserPid(message->userName), serverMessage);
-        removeFromUserList(message->userName);
-        printf("SERVER MESSAGE: User %s has left the chat room number %d\n", message->userName, roomNumber+1);
-        free(serverMessage);
+    } else if(!strcmp(message.msg, COMMAND_QUIT)) {
+        removeFromUserList(message.userName);
+        message_t serverMessage;
+        strcpy(serverMessage.userName, "DEDICATED SERVER");
+        strcpy(serverMessage.msg, "You have left the chat room...");
+        sendMessageToUser(getUserPid(message.userName), serverMessage);
+        strcpy(serverMessage.msg, message.userName);
+        strcat(serverMessage.msg, " has left the chat room.");
+        broadcast(serverMessage);
         return TRUE;
-    } else if(!strcmp(message->msg, COMMAND_USERS)) {
-        message_t *serverMessage = (message_t *)malloc(sizeof(message_t));
-        strcpy(serverMessage->userName, "DEDICATED SERVER");
+    } else if(!strcmp(message.msg, COMMAND_USERS)) {
+        message_t serverMessage;
+        strcpy(serverMessage.userName, "DEDICATED SERVER");
         int msgLenth = 0;
         usrData_t *curr = users;
-        strcpy(serverMessage->msg, "\n\nUsers in current chat room are:\n-------------------------------\n");
+        strcpy(serverMessage.msg, "\n\nUsers in current chat room are:\n-------------------------------\n");
         while (curr != NULL) {
             if (msgLenth > MESSAGE_SIZE-3 || msgLenth + strlen(curr->userName) > MESSAGE_SIZE ) {
-                strcat(serverMessage->msg, "...");
-                sendMessageToUser(getUserPid(message->userName), serverMessage);
+                strcat(serverMessage.msg, "...");
+                sendMessageToUser(getUserPid(message.userName), serverMessage);
                 return;
             } else {
-                strcat(serverMessage->msg, curr->userName);
-                strcat(serverMessage->msg, "\n");
+                strcat(serverMessage.msg, curr->userName);
+                strcat(serverMessage.msg, "\n");
             }
             msgLenth += strlen(curr->userName)+1;
             curr = curr->next;
         }
-        serverMessage->msg[strlen(serverMessage->msg)] = '\0';
-        sendMessageToUser(getUserPid(message->userName), serverMessage);
-        free(serverMessage);
+        serverMessage.msg[strlen(serverMessage.msg)] = '\0';
+        sendMessageToUser(getUserPid(message.userName), serverMessage);
         return TRUE;
     }
     return FALSE;
@@ -226,10 +226,9 @@ getConnectionTime(char *userName) {
 
 void
 addToUserList(usrData_t *usrData) {
-    message_t *serverMessage = (message_t *)malloc(sizeof(message_t));
+    message_t serverMessage;
     
     if (users == NULL) {
-        printf("CASO 1\n");
         users = usrData;
     } else {
         usrData_t *curr = users;
@@ -238,11 +237,10 @@ addToUserList(usrData_t *usrData) {
         }
         curr->next = usrData;
     }
-    printf("pase add..\n");
-    strcpy(serverMessage->msg, "Hello! I've joined your chat room!");
-    strcpy(serverMessage->userName, usrData->userName);
+    strcpy(serverMessage.msg, usrData->userName);
+    strcat(serverMessage.msg, " has joined the chat room.");
+    strcpy(serverMessage.userName, "SERVER MESSAGE");
     broadcast(serverMessage);
-    free(serverMessage);
     clientsInRoom++;
 }
 
@@ -250,6 +248,7 @@ void
 removeFromUserList(char *userName) {
     usrData_t *curr = users;
     usrData_t *prev = NULL;
+    message_t serverMessage;
     while (curr != NULL) {
         if (!strcmp(curr->userName, userName)) {
             if (prev != NULL) {
@@ -264,6 +263,10 @@ removeFromUserList(char *userName) {
         prev = curr;
         curr = curr->next;
     }
+    strcpy(serverMessage.msg, userName);
+    strcat(serverMessage.msg, " has left the chat room.");
+    strcpy(serverMessage.userName, "SERVER MESSAGE");
+    broadcast(serverMessage);
 }
 
 void
@@ -282,7 +285,7 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
     char ds[NAME_SIZE+1] = {'\0'};
     char roomAux[MAX_PID_DIGITS+1] = {'\0'};
     char protocol = USER_MESSAGE;
-    int aux;
+    int aux, dsrid;
     identifier_t ID;
     boolean hasRead = FALSE;
     info_t protocolInfo;
@@ -292,13 +295,13 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
 
 	printf("\nDedicated server with pid %d has been created for user %s (%d)\n",\
            dsPid, userName, userPid);
-	if(createIPC(ds) == -1){
+	if((dsrid = createIPC(ds)) == -1){
 		perror("creating IPC read error");
         exit(0);
     }
-    ID = getIdentifier(ds, O_RDWR);
+    ID = getIdentifier(ds, O_RDWR, dsrid);
     if(ID.fd == -1){
-		perror("IPC open failed");
+		perror("IPC fasfasfsdfasfopen failed");
         exit(0);
     }
     while (TRUE) {
@@ -322,11 +325,11 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
 }
 
 void
-broadcast(message_t *message) {
+broadcast(message_t message) {
     usrData_t *curr = users;
     int id, aux;
     while (curr != NULL) {
-        if (strcmp(curr->userName, message->userName) != 0) {
+        if (strcmp(curr->userName, message.userName) != 0) {
             sendMessageToUser(getUserPid(curr->userName), message);
         }
         curr = curr->next;
@@ -334,7 +337,7 @@ broadcast(message_t *message) {
 }
 
 void
-sendMessageToUser(pid_t pid, message_t *message) {
+sendMessageToUser(pid_t pid, message_t message) {
     int aux;
     identifier_t id;
     char IPCname[NAME_SIZE+1] = {'\0'};
@@ -342,12 +345,11 @@ sendMessageToUser(pid_t pid, message_t *message) {
     info_t messageInfo;
     strcpy(IPCname, "r_msg");
     strcat(IPCname, itoa(pid, userPid));
-    id = getIdentifier(IPCname, O_WRONLY);
+    id = getIdentifier(IPCname, O_WRONLY, SchatRoomID.fd);
     if(id.fd == -1){
-        perror("IPC open failed");
-        exit(0);
+        return;
     }
-    memcpy(messageInfo.mtext, message, sizeof(message_t));
+    memcpy(messageInfo.mtext, &message, sizeof(message_t));
     messageInfo.mtype = pid*2;
     if((aux = putInfo(id, &messageInfo, sizeof(info_t))) < 0){
         perror("Failed to write user message.");

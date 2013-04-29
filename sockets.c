@@ -2,11 +2,6 @@
 
 int
 createIPC(char* strKey) {
-    return 1;
-}
-
-identifier_t
-getIdentifier(char* strKey, int mode){
     struct sockaddr_un sockaddr;
     identifier_t ans;
     strcpy(ans.address, strKey);
@@ -18,16 +13,21 @@ getIdentifier(char* strKey, int mode){
         perror("failed to socket call");
         exit(1);
     }
-    if ((bind(ans.fd, (struct sockaddr *) &sockaddr, sizeof(struct sockaddr_un)) == -1)) {
-		close(ans.fd);
-		perror("bind call failed");
-		exit(1);
-	}
+    bind(ans.fd, (struct sockaddr *) &sockaddr, sizeof(struct sockaddr_un));
+	
+    return ans.fd;
+}
+
+identifier_t
+getIdentifier(char* strKey, int mode, int id){
+    identifier_t ans;
+    ans.fd = id;
+    strcpy(ans.address, strKey);
+    return ans;
 }
 
 int
 getInfo(identifier_t id, info_t* info, int size, long priority) {
-    printf("id.fd = %d\n", id.fd);
     if (recv(id.fd, info, size, 0) == -1) {
         perror("recv call failed");
         exit(1);
@@ -41,6 +41,8 @@ putInfo(identifier_t id, info_t* info, int size){
     
     sockaddr.sun_family = AF_UNIX;
     strcpy(sockaddr.sun_path, id.address);
+    
+    printf("sockadrr.path = %s\nfdInfo = %d\n", sockaddr.sun_path, id.fd);
     
     if (sendto(id.fd, info, size, 0, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) == -1) {
         perror("sendto call failed");
