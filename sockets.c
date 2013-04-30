@@ -42,9 +42,8 @@ putInfo(identifier_t id, info_t* info, int size){
     sockaddr.sun_family = AF_UNIX;
     strcpy(sockaddr.sun_path, id.address);
     
-    printf("sockadrr.path = %s\nfdInfo = %d\n", sockaddr.sun_path, id.fd);
-    
     if (sendto(id.fd, info, size, 0, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) == -1) {
+        printf("failed to send to: %s\n", id.address);
         perror("sendto call failed");
         exit(1);
     }
@@ -52,8 +51,7 @@ putInfo(identifier_t id, info_t* info, int size){
 
 void
 endIPC(identifier_t id){
-    unlink(id.address);
-    close(id.fd);
+    remove(id.address);
 }
 
 void
@@ -62,4 +60,5 @@ removeIPC(void){
     system("rm -rf RchatRoom*");
     system("rm -rf dsr*");
     system("rm -rf r_msg*");
+    system("rm -rf ipc*");
 }

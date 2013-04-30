@@ -83,7 +83,6 @@ boolean
 isValidRoomNumber(char *opt, int rooms) {
     int nOpt = atoi(opt);
     
-    
     if (strlen(opt) == 0) {
         printf("ERROR: please introduce a numeric value\n");
         resetOption(opt);
@@ -142,7 +141,6 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	
 	char SchatRoom[NAME_SIZE+1] = "SchatRoom";
 	char RchatRoom[NAME_SIZE+1] = "RchatRoom";
-	char aPid[MAX_PID_DIGITS+1] = {'\0'};
     
 	strcat(SchatRoom, itoa(room, roomNumber));
 	strcat(RchatRoom, itoa(room, roomNumber));
@@ -159,7 +157,10 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	
 	int aux, id;
 	char result[2];
-    id = createIPC("ipc");
+    char address[NAME_SIZE+1] = "ipc";
+    char itoaPid[NAME_SIZE+1] = {'\0'};
+    strcat(address, itoa(clientPid, itoaPid));
+    id = createIPC(address);
 	idWrite = getIdentifier(sIPCname, O_WRONLY, id);
 	if(idWrite.fd == -1){
 		perror("write IPC open failed");
@@ -191,13 +192,16 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 				userTaken = FALSE;
 			}
 			else{
+                system("clear");
                 printf("That user name is in use. Please select another one.\n");
 				userTaken = TRUE;
 			}
 			hasRead = TRUE;
 		}
 	}
-	endIPC(idWrite);
+    strcpy(itoaPid, "rm -rf ");
+    strcat(itoaPid, address);
+    system(itoaPid);
 	return userTaken;
 }
 

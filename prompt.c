@@ -72,7 +72,6 @@ sendMessage(void) {
     
     ids = createIPC(ds);
     
-    
     id = getIdentifier(ds, O_RDWR, ids);
     if(id.fd == -1){
 		perror("IPC open failed");
@@ -90,6 +89,7 @@ sendMessage(void) {
     }
     free(msg);
     if (strcmp(message, "/quit") == 0) {
+        sleep(2);
         exit(0);
     }
 }

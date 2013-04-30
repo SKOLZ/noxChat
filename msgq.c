@@ -4,7 +4,7 @@ createIPC(char* strKey){
 }
 
 identifier_t
-getIdentifier(char* strKey, int mode){
+getIdentifier(char* strKey, int mode, int unused){
     identifier_t ans;
     ans.fd = msgget(QUEUE_KEY, 0666 | IPC_CREAT);
     strcpy(ans.address, strKey);

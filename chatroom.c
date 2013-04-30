@@ -5,7 +5,7 @@ int roomPid;
 int clientNumber;
 usrData_t *users;
 identifier_t SchatRoomID;
-int clientsInRoom;
+char lastUserConnected[NAME_SIZE+1] = {'\0'};
 
 int
 main(int argc, char **argv) {
@@ -109,18 +109,20 @@ welcomeUsers(char *reader, char *writer, int idr, int idw){
 			memcpy(usrData, userInfo.mtext, sizeof(usrData_t));
             usrData->next = NULL;
             if(aux1 > 0 && aux2 > 0) {
-                /*int ids = createIPC("server");
-                identifier_t idsi = getIdentifier("ipc", O_WRONLY, ids);*/
-                writerID = getIdentifier(writer, O_WRONLY, idw);
-                if(writerID.fd == -1){
-					perror("IPC open failed");
-					exit(0);
-				}
+                char address[NAME_SIZE+1] = "ipc";
+                char itoaPid[NAME_SIZE+1] = {'\0'};
+                strcat(address, itoa(usrData->userPid, itoaPid));
                 if(uniqueUser(usrData->userName)) {
                     addToUserList(usrData);
                     printf("\nSERVER MESSAGE: User \"%s\" has joined room number %d - User PID = %d\n", usrData->userName, roomNumber+1, usrData->userPid);
                     memcpy(confirmationInfo.mtext, "y", 2);
                     confirmationInfo.mtype = roomPid*3;
+                    writerID = getIdentifier(writer, O_WRONLY, idw);
+                    strcpy(writerID.address, address);
+                    if(writerID.fd == -1){
+                        perror("IPC open failed");
+                        exit(0);
+                    }
                     if(putInfo(writerID, &confirmationInfo, sizeof(info_t)) == -1){
 						perror("Writing name Available failed");
                     }
@@ -139,13 +141,14 @@ welcomeUsers(char *reader, char *writer, int idr, int idw){
                         }
                     }
                 } else {
+                    writerID = getIdentifier(writer, O_WRONLY, idw);
+                    strcpy(writerID.address, address);
 					memcpy(confirmationInfo.mtext, "n", 2);
                     confirmationInfo.mtype = roomPid*3;
 					if(putInfo(writerID, &confirmationInfo, sizeof(info_t)) == -1){
 						perror("Writing name Available failed");
                     }
                 }
-                endIPC(writerID);
             }
         } else {
             perror("Protocol error\n");
@@ -166,7 +169,6 @@ isCommand(message_t message) {
         sendMessageToUser(getUserPid(message.userName), serverMessage);
         return TRUE;
     } else if(!strcmp(message.msg, COMMAND_QUIT)) {
-        removeFromUserList(message.userName);
         message_t serverMessage;
         strcpy(serverMessage.userName, "DEDICATED SERVER");
         strcpy(serverMessage.msg, "You have left the chat room...");
@@ -174,6 +176,7 @@ isCommand(message_t message) {
         strcpy(serverMessage.msg, message.userName);
         strcat(serverMessage.msg, " has left the chat room.");
         broadcast(serverMessage);
+        removeFromUserList(message.userName);
         return TRUE;
     } else if(!strcmp(message.msg, COMMAND_USERS)) {
         message_t serverMessage;
@@ -237,11 +240,11 @@ addToUserList(usrData_t *usrData) {
         }
         curr->next = usrData;
     }
+    strcpy(lastUserConnected, usrData->userName);
     strcpy(serverMessage.msg, usrData->userName);
     strcat(serverMessage.msg, " has joined the chat room.");
-    strcpy(serverMessage.userName, "SERVER MESSAGE");
+    strcpy(serverMessage.userName, "DEDICATED SERVER");
     broadcast(serverMessage);
-    clientsInRoom++;
 }
 
 void
@@ -256,7 +259,6 @@ removeFromUserList(char *userName) {
             } else {
                 users = curr->next;
             }
-            clientsInRoom--;
             free(curr);
             return;
         }
@@ -265,7 +267,7 @@ removeFromUserList(char *userName) {
     }
     strcpy(serverMessage.msg, userName);
     strcat(serverMessage.msg, " has left the chat room.");
-    strcpy(serverMessage.userName, "SERVER MESSAGE");
+    strcpy(serverMessage.userName, "DEDICATED SERVER");
     broadcast(serverMessage);
 }
 
@@ -330,7 +332,11 @@ broadcast(message_t message) {
     int id, aux;
     while (curr != NULL) {
         if (strcmp(curr->userName, message.userName) != 0) {
-            sendMessageToUser(getUserPid(curr->userName), message);
+            if (strcmp(curr->userName, lastUserConnected) == 0) {
+                strcpy(lastUserConnected, "");
+            } else {
+                sendMessageToUser(getUserPid(curr->userName), message);
+            }
         }
         curr = curr->next;
     }
@@ -347,7 +353,8 @@ sendMessageToUser(pid_t pid, message_t message) {
     strcat(IPCname, itoa(pid, userPid));
     id = getIdentifier(IPCname, O_WRONLY, SchatRoomID.fd);
     if(id.fd == -1){
-        return;
+        perror("Send message to user failed\n");
+        exit(1);
     }
     memcpy(messageInfo.mtext, &message, sizeof(message_t));
     messageInfo.mtype = pid*2;
@@ -355,7 +362,6 @@ sendMessageToUser(pid_t pid, message_t message) {
         perror("Failed to write user message.");
         exit(0);
     }
-    endIPC(id);
 }
 
 boolean
