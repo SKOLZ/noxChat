@@ -60,7 +60,7 @@
     void listenToUser(char *userName, pid_t userPid, pid_t dsPid);
     void addToUserList(usrData_t *usrData);
     void removeFromUserList(char *userName);
-    void checkCommand(char *command);
+    void checkCommand(char *command, id_t* pids, int amount);
     void broadcast(message_t message);
     void showUsers(void);
     

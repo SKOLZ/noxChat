@@ -56,14 +56,18 @@ main(int argc, char **argv) {
             command[i++] = c;
         }
         command[i] = '\0';
-        checkCommand(command);
+        checkCommand(command, pids, rooms);
 	}
 }
 
 void
-checkCommand(char *command) {
+checkCommand(char *command, id_t* pids, int amount) {
     if(!strcmp(command, "/quit")) {
-        shutdownServer(0);
+		int i;
+		for( i=0 ; i<amount ; i++){
+			kill(pids[i], SIGTERM);
+		}
+		shutdownServer(0);
     }
 }
 

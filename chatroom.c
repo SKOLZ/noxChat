@@ -172,6 +172,7 @@ isCommand(message_t message) {
         message_t serverMessage;
         strcpy(serverMessage.userName, "DEDICATED SERVER");
         strcpy(serverMessage.msg, "You have left the chat room...");
+        printf("%s\n", message.userName);
         sendMessageToUser(getUserPid(message.userName), serverMessage);
         strcpy(serverMessage.msg, message.userName);
         strcat(serverMessage.msg, " has left the chat room.");
@@ -289,7 +290,7 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
     char protocol = USER_MESSAGE;
     int aux, dsrid;
     identifier_t ID;
-    boolean hasRead = FALSE;
+    boolean hasRead = FALSE, destroy = FALSE;
     info_t protocolInfo;
     info_t messageInfo;
 	strcpy(ds, "dsr");
@@ -311,17 +312,25 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
             perror("Failed to read user name.");
             exit(0);
         } else if (aux > 0) {
+			if(strcmp(messageInfo.mtext, "/quit") == 0) {
+				destroy = TRUE;
+			}
 			memcpy(protocolInfo.mtext, &protocol, 1);
             protocolInfo.mtype = roomPid;
-            if((aux = putInfo(SchatRoomID, &protocolInfo, sizeof(info_t))) < 0){
+            if((aux = putInfo(SchatRoomID, &protocolInfo, sizeof(info_t))) == -1){
                 perror("Failed to write protocol.");
                 exit(0);
             }
             messageInfo.mtype = roomPid;
-            if((aux = putInfo(SchatRoomID, &messageInfo, sizeof(info_t))) < 0){
+            if((aux = putInfo(SchatRoomID, &messageInfo, sizeof(info_t))) == -1){
                 perror("Failed to write user message.");
                 exit(0);
             }
+            if(destroy) {
+				printf("seme muere el ds mameeeee \n");
+				exit(0);
+				//kill(getpid(), SIGTERM);
+			}
         }
     }
 }
@@ -358,8 +367,8 @@ sendMessageToUser(pid_t pid, message_t message) {
     }
     memcpy(messageInfo.mtext, &message, sizeof(message_t));
     messageInfo.mtype = pid*2;
-    if((aux = putInfo(id, &messageInfo, sizeof(info_t))) < 0){
-        perror("Failed to write user message.");
+    if((aux = putInfo(id, &messageInfo, sizeof(info_t))) == -1){
+        perror("Failed to write user message.\n");
         exit(0);
     }
 }

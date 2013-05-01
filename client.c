@@ -116,7 +116,7 @@ askRoomNumber(int rooms, pid_t* pids) {
         flag = TRUE;
         while((c = getchar()) != '\n' && flag) {
             roomNumber[i++] = c;
-            if (i == MAX_ROOM_DIGITS) {
+            if (i == MAX_ROOM_DIGITS+1) {
                 flag = FALSE;
             }
         }
@@ -124,6 +124,7 @@ askRoomNumber(int rooms, pid_t* pids) {
             while(getchar() != '\n');
         }
         roomNumber[MAX_ROOM_DIGITS] = '\0';
+        printf("roomNumber = %s\n", roomNumber);
 		room = atoi(roomNumber);
 		strcpy(roomPid, itoa(pids[room-1], roomAux));
 	}while (!isValidRoomNumber(roomNumber, rooms));

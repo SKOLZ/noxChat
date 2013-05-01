@@ -89,7 +89,7 @@ sendMessage(void) {
     }
     free(msg);
     if (strcmp(message, "/quit") == 0) {
-        sleep(2);
+        printf("se me muere el prom chowaaaaa\n");
         exit(0);
     }
 }
