@@ -13,6 +13,9 @@ main(int argc, char **argv) {
         printf("\nInvalid amount of arguments\n");
         exit(1);
     }
+    if( access("server.cfg", F_OK )) {
+        exit(0);
+    }
     
     static struct sigaction act;
     void catchint(int);
@@ -67,6 +70,11 @@ sendMessage(void) {
     
     info_t messageInfo;
     
+    if( access("server.cfg", F_OK ) == -1) {
+        printf("prompt has exited...\n");
+        exit(0);
+    }
+    
 	strcpy(ds, "dsr");
     strcat(ds, userPid);
     
@@ -89,7 +97,6 @@ sendMessage(void) {
     }
     free(msg);
     if (strcmp(message, "/quit") == 0) {
-        printf("se me muere el prom chowaaaaa\n");
         exit(0);
     }
 }

@@ -49,9 +49,7 @@ void
 catchint(int signo) {
     message_t serverMessage;
     strcpy(serverMessage.userName, "DEDICATED SERVER");
-    char msg[MESSAGE_SIZE+1] = "Server execution has been terminated suddenly. Please try connecting again later...\nERROR CODE: ";
-    char aux[6] = {'\0'};
-    strcat(msg, itoa(signo, aux));
+    char msg[MESSAGE_SIZE+1] = "Server execution has been terminated suddenly. Please try connecting again later...\n";
     strcpy(serverMessage.msg, msg);
     broadcast(serverMessage);
     freeUserList();
@@ -168,11 +166,17 @@ isCommand(message_t message) {
         strcpy(serverMessage.msg, msg);
         sendMessageToUser(getUserPid(message.userName), serverMessage);
         return TRUE;
+    } else if (!strcmp(message.msg, COMMAND_COMMANDS)) {
+        message_t serverMessage;
+        strcpy(serverMessage.userName, "DEDICATED SERVER");
+        char msg[MESSAGE_SIZE+1] = "\n\nCommand list:\n-------------\n/commands\n/cost\n/users\n/quit\n";
+        strcpy(serverMessage.msg, msg);
+        sendMessageToUser(getUserPid(message.userName), serverMessage);
+        return TRUE;
     } else if(!strcmp(message.msg, COMMAND_QUIT)) {
         message_t serverMessage;
         strcpy(serverMessage.userName, "DEDICATED SERVER");
         strcpy(serverMessage.msg, "You have left the chat room...");
-        printf("%s\n", message.userName);
         sendMessageToUser(getUserPid(message.userName), serverMessage);
         strcpy(serverMessage.msg, message.userName);
         strcat(serverMessage.msg, " has left the chat room.");
@@ -304,10 +308,13 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
     }
     ID = getIdentifier(ds, O_RDWR, dsrid);
     if(ID.fd == -1){
-		perror("IPC fasfasfsdfasfopen failed");
+		perror("IPC open failed");
         exit(0);
     }
     while (TRUE) {
+        if( access("server.cfg", F_OK ) == -1) {
+            exit(0);
+        }
         if((aux = getInfo(ID, &messageInfo, sizeof(info_t), userPid)) < 0){
             perror("Failed to read user name.");
             exit(0);
@@ -327,7 +334,6 @@ listenToUser(char *userName, pid_t userPid, pid_t dsPid) {
                 exit(0);
             }
             if(destroy) {
-				printf("seme muere el ds mameeeee \n");
 				exit(0);
 				//kill(getpid(), SIGTERM);
 			}

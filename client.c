@@ -124,7 +124,6 @@ askRoomNumber(int rooms, pid_t* pids) {
             while(getchar() != '\n');
         }
         roomNumber[MAX_ROOM_DIGITS] = '\0';
-        printf("roomNumber = %s\n", roomNumber);
 		room = atoi(roomNumber);
 		strcpy(roomPid, itoa(pids[room-1], roomAux));
 	}while (!isValidRoomNumber(roomNumber, rooms));
@@ -178,14 +177,17 @@ checkUserInServer(char *userName, int room, pid_t pid) {
 	
 	if(putInfo(idWrite, &userInfo, sizeof(info_t)) < 0){
 		perror("Write user name error");
+        exit(0);
 	}
 	while(!hasRead){
         idRead = getIdentifier(rIPCname, O_RDWR, id);
 		if(idRead.fd == -1 ){
 			perror("read IPC open failed");
+            exit(0);
 		}
 		if((aux = getInfo(idRead, &confirmationInfo, sizeof(info_t), atoi(roomPid)*3)) < 0){
 			perror("Read failed");
+            exit(0);
 		}
 		memcpy(result, confirmationInfo.mtext, 2);
 		if(aux > 0){
@@ -218,7 +220,9 @@ isValidUserName(char *userName, int room) {
 void
 welcome(int opt) {
     system("clear");
-    printf("Welcome to chat room nbr. %d\n", opt);
+    printf("Welcome %s to chat room nbr. %d\n", userName, opt);
+    printDivision();
+    printf("Need any help? Type \"/commands\" to check the command list\n");
     printDivision();
     pid_t aux;
     switch(aux = fork()){

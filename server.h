@@ -27,6 +27,7 @@
     #define COMMAND_QUIT "/quit"
     #define COMMAND_COST "/cost"
     #define COMMAND_USERS "/users"
+    #define COMMAND_COMMANDS "/commands"
     #define QUEUE_KEY (key_t)0100
     typedef int boolean;       
     #include "grlfun.h"
@@ -43,8 +44,6 @@
         char msg[MESSAGE_SIZE+1];
         char userName[NAME_SIZE+1];
     }message_t;
-
-
 
     void saveData(void);
     void freeUserList(void);

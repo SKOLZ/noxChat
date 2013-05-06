@@ -20,6 +20,10 @@ main(int argc, char **argv) {
         printf("FATAL: Invalid amount of arguments\n");
         return 1;
     }
+    if( access("server.cfg", F_OK ) != -1 ) {
+        printf("FATAL: Another instance of the server is running.\n");
+        return 1;
+    }
 	rooms = atoi(argv[1]);
 	selfPid = getpid();
 	if((pids = (pid_t *)malloc(rooms*sizeof(pid_t))) == NULL){
